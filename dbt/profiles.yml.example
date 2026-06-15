@@ -1,0 +1,7 @@
+urban_mobility:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', './data/processed/urban_mobility.duckdb') }}"
+      threads: 4

@@ -1,0 +1,62 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Python
+.python-version.local
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# JavaScript and frontend build output
+node_modules/
+apps/web/dist/
+apps/web/.vite/
+
+# Data, databases, and generated reports
+*.parquet
+*.arrow
+*.feather
+*.duckdb
+*.duckdb.wal
+*.db
+*.sqlite
+*.sqlite3
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/sample/*
+!data/sample/.gitkeep
+reports/data_quality/*
+!reports/data_quality/.gitkeep
+
+# dbt and Dagster generated output
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+.dagster/
+
+# Local workflow artifacts
+.planning/
+docs/superpowers/plans/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini

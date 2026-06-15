@@ -1,0 +1,18 @@
+repos:
+  - repo: local
+    hooks:
+      - id: repository-guardrails
+        name: Block secrets, raw data, databases, and large files
+        entry: uv run python scripts/check_repo_guardrails.py
+        language: system
+        pass_filenames: true
+      - id: ruff-check
+        name: Ruff lint
+        entry: uv run ruff check
+        language: system
+        types_or: [python, pyi]
+      - id: ruff-format
+        name: Ruff format check
+        entry: uv run ruff format --check
+        language: system
+        types_or: [python, pyi]
