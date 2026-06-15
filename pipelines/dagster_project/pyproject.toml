@@ -1,0 +1,6 @@
+[project]
+name = "urban-mobility-dagster"
+version = "0.0.0"
+description = "Dagster project scaffold; orchestration is implemented in Phase 6."
+requires-python = ">=3.12,<3.13"
+dependencies = []
