@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  phase-1:
+  python:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository

@@ -1,15 +1,18 @@
 name: urban-mobility-data-platform
 
 services:
-  bootstrap:
-    image: ${DOCKER_IMAGE:-pracill1997/urban-mobility-data-platform:phase1}
+  api:
+    image: ${DOCKER_IMAGE:-pracill1997/urban-mobility-data-platform:phase4}
     build:
       context: .
       dockerfile: Dockerfile
     environment:
       APP_ENV: ${APP_ENV:-local}
       DATA_DIR: /data
+      DUCKDB_PATH: /data/processed/urban_mobility.duckdb
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "${API_PORT:-8000}:8000"
     volumes:
       - mobility-data:/data
 

@@ -7,3 +7,17 @@ test-paths: ["tests"]
 macro-paths: ["macros"]
 target-path: target
 clean-targets: ["target", "dbt_packages"]
+
+flags:
+  send_anonymous_usage_stats: false
+
+models:
+  urban_mobility:
+    staging:
+      +materialized: view
+    dimensions:
+      +materialized: table
+    facts:
+      +materialized: table
+    marts:
+      +materialized: table

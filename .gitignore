@@ -41,6 +41,10 @@ data/processed/*
 !data/processed/.gitkeep
 data/sample/*
 !data/sample/.gitkeep
+data/reports/*
+!data/reports/data_quality/
+data/reports/data_quality/*
+!data/reports/data_quality/.gitkeep
 reports/data_quality/*
 !reports/data_quality/.gitkeep
 
@@ -48,6 +52,7 @@ reports/data_quality/*
 dbt/target/
 dbt/logs/
 dbt/dbt_packages/
+dbt/.user.yml
 .dagster/
 
 # Local workflow artifacts

@@ -10,8 +10,6 @@ data
 reports
 docs
 tests
-apps
-dbt
 pipelines
 node_modules
 dist

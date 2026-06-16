@@ -1,0 +1,26 @@
+version: 2
+
+sources:
+  - name: mobility_staging
+    description: Validated local data loaded transactionally by the Python DuckDB loader.
+    schema: staging
+    tables:
+      - name: yellow_trips
+        description: Valid and warning-classified Yellow Taxi trips.
+        columns:
+          - name: trip_id
+            data_tests:
+              - not_null
+              - unique
+          - name: service
+            data_tests:
+              - accepted_values:
+                  arguments:
+                    values: ["yellow"]
+      - name: taxi_zones
+        description: NYC TLC taxi zone reference data.
+        columns:
+          - name: location_id
+            data_tests:
+              - not_null
+              - unique

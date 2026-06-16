@@ -1,0 +1,12 @@
+select *
+from (
+    values
+        (0, 'Unknown'),
+        (1, 'Standard rate'),
+        (2, 'JFK'),
+        (3, 'Newark'),
+        (4, 'Nassau or Westchester'),
+        (5, 'Negotiated fare'),
+        (6, 'Group ride'),
+        (99, 'Unknown')
+) as rate_codes(rate_code_id, rate_code_name)

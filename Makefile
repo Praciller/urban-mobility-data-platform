@@ -1,30 +1,49 @@
-.PHONY: setup download-sample profile-sample validate-sample dbt-run dbt-test \
+.PHONY: setup download-sample profile-sample validate-sample load-duckdb dbt-run dbt-test \
 	pipeline-sample api web dagster test lint format docker-up docker-down clean-generated
+
+YEAR ?= 2026
+MONTH ?= 1
+SERVICE ?= yellow
+SAMPLE_ROWS ?= 1000
+API_HOST ?= 127.0.0.1
+API_PORT ?= 8000
 
 setup:
 	uv sync --all-groups
 	uv run pre-commit install
 
 download-sample:
-	@echo "Phase 2 command scaffold: dataset download is not implemented in Phase 1."
+	uv run python -m urban_mobility.download --year $(YEAR) --month $(MONTH) \
+		--service $(SERVICE) --sample-rows $(SAMPLE_ROWS)
 
 profile-sample:
-	@echo "Phase 2 command scaffold: sample profiling is not implemented in Phase 1."
+	uv run python -m urban_mobility.ingest inspect --year $(YEAR) --month $(MONTH) \
+		--service $(SERVICE) --mode sample --sample-rows $(SAMPLE_ROWS)
 
 validate-sample:
-	@echo "Phase 2 command scaffold: sample validation is not implemented in Phase 1."
+	uv run python -m urban_mobility.validate --year $(YEAR) --month $(MONTH) \
+		--service $(SERVICE)
+
+load-duckdb:
+	uv run python -m urban_mobility.load_duckdb --year $(YEAR) --month $(MONTH) \
+		--service $(SERVICE)
 
 dbt-run:
-	@echo "Phase 3 command scaffold: dbt models are not implemented in Phase 1."
+	uv run dbt run --project-dir dbt --profiles-dir dbt
 
 dbt-test:
-	@echo "Phase 3 command scaffold: dbt tests are not implemented in Phase 1."
+	uv run dbt test --project-dir dbt --profiles-dir dbt
 
 pipeline-sample:
-	@echo "Phase 2 command scaffold: sample pipeline is not implemented in Phase 1."
+	$(MAKE) download-sample
+	$(MAKE) profile-sample
+	$(MAKE) validate-sample
+	$(MAKE) load-duckdb
+	$(MAKE) dbt-run
+	$(MAKE) dbt-test
 
 api:
-	@echo "Phase 4 command scaffold: FastAPI is not implemented in Phase 1."
+	uv run uvicorn apps.api.app.main:app --reload --host $(API_HOST) --port $(API_PORT)
 
 web:
 	@echo "Phase 5 command scaffold: React is not implemented in Phase 1."

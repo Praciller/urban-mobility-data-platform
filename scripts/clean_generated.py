@@ -27,6 +27,8 @@ def main() -> int:
     project_root = Path(__file__).resolve().parents[1]
     targets = [
         data_dir / "processed",
+        data_dir / "sample",
+        data_dir / "reports" / "data_quality",
         project_root / "reports" / "data_quality",
     ]
     removed = sum(clear_directory(target) for target in targets)

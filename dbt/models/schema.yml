@@ -1,0 +1,165 @@
+version: 2
+
+models:
+  - name: stg_yellow_trips
+    description: Typed valid and warning Yellow Taxi records from persisted DuckDB staging.
+    columns:
+      - name: trip_id
+        description: Deterministic record hash plus duplicate occurrence suffix.
+        data_tests:
+          - not_null
+          - unique
+      - name: service
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["yellow"]
+      - name: quality_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["valid", "warning"]
+
+  - name: stg_taxi_zones
+    description: Typed NYC TLC taxi zone lookup.
+    columns:
+      - name: zone_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: dim_zone
+    description: Taxi zone attributes used by pickup and dropoff relationships.
+    columns:
+      - name: zone_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: dim_date
+    description: Calendar attributes for dates present in validated trip data.
+    columns:
+      - name: date
+        data_tests:
+          - not_null
+          - unique
+
+  - name: dim_hour
+    description: Complete 24-hour clock dimension.
+    columns:
+      - name: hour
+        data_tests:
+          - not_null
+          - unique
+
+  - name: dim_payment_type
+    description: NYC TLC payment type code mapping with an unknown member.
+    columns:
+      - name: payment_type
+        data_tests:
+          - not_null
+          - unique
+
+  - name: dim_rate_code
+    description: NYC TLC rate code mapping with an unknown member.
+    columns:
+      - name: rate_code_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: fct_trips
+    description: One row per classified, loadable Yellow Taxi trip.
+    columns:
+      - name: trip_id
+        description: Primary key for a physical source-row occurrence.
+        data_tests:
+          - not_null
+          - unique
+      - name: service
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["yellow"]
+      - name: pickup_date
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref("dim_date")
+                field: date
+      - name: pickup_hour
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref("dim_hour")
+                field: hour
+      - name: pickup_zone_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref("dim_zone")
+                field: zone_id
+      - name: dropoff_zone_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref("dim_zone")
+                field: zone_id
+      - name: payment_type
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("dim_payment_type")
+                field: payment_type
+      - name: rate_code_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("dim_rate_code")
+                field: rate_code_id
+      - name: trip_distance
+        data_tests:
+          - non_negative
+      - name: fare_amount
+        data_tests:
+          - non_negative
+      - name: total_amount
+        data_tests:
+          - non_negative
+      - name: duration_minutes
+        data_tests:
+          - valid_trip_duration:
+              arguments:
+                maximum_minutes: 1440
+      - name: average_speed_mph
+        data_tests:
+          - reasonable_average_speed:
+              arguments:
+                maximum_mph: 100
+      - name: quality_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["valid", "warning"]
+
+  - name: mart_daily_trip_metrics
+    description: Daily trip, distance, revenue, duration, speed, and airport aggregates.
+
+  - name: mart_hourly_demand
+    description: Demand and revenue metrics by pickup date and hour.
+
+  - name: mart_zone_demand
+    description: Pickup demand and revenue metrics by taxi zone.
+
+  - name: mart_route_metrics
+    description: Trip, duration, distance, and revenue metrics by pickup/dropoff route.
+
+  - name: mart_revenue_metrics
+    description: Daily revenue components grouped by payment type.
+
+  - name: mart_anomalous_trips
+    description: Warning-classified or operationally unusual loadable trips.
