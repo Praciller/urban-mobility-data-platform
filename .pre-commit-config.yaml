@@ -6,6 +6,11 @@ repos:
         entry: uv run python scripts/check_repo_guardrails.py
         language: system
         pass_filenames: true
+      - id: repository-readiness
+        name: Check repository publish readiness
+        entry: uv run python scripts/check_repo_readiness.py
+        language: system
+        pass_filenames: false
       - id: ruff-check
         name: Ruff lint
         entry: uv run ruff check

@@ -531,13 +531,11 @@ class AnalyticsRepository:
     @contextmanager
     def _connect(self) -> Iterator[duckdb.DuckDBPyConnection]:
         if not self.duckdb_path.is_file():
-            raise DataUnavailableError(f"DuckDB database does not exist: {self.duckdb_path}")
+            raise DataUnavailableError("DuckDB database is unavailable")
         try:
             connection = duckdb.connect(str(self.duckdb_path), read_only=True)
         except duckdb.Error as error:
-            raise DataUnavailableError(
-                f"DuckDB database is unavailable: {self.duckdb_path}"
-            ) from error
+            raise DataUnavailableError("DuckDB database is unavailable") from error
         try:
             yield connection
         except duckdb.Error as error:

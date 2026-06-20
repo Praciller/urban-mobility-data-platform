@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Path, Query
 from fastapi.responses import StreamingResponse
 
 from apps.api.app.repositories.analytics import AnalyticsRepository
+from apps.api.app.repositories.quality import QualityReportRepository
 from apps.api.app.schemas.responses import (
     AnomalousTrip,
     DailyMetric,
@@ -15,13 +16,14 @@ from apps.api.app.schemas.responses import (
     MetadataResponse,
     OverviewMetrics,
     PaginatedResponse,
+    QualitySummaryResponse,
     RevenueMetric,
     RouteMetric,
     ZoneMetric,
     ZoneSummary,
 )
 from apps.api.app.services.analytics import AnalyticsService
-from urban_mobility.config import get_duckdb_path
+from urban_mobility.config import get_data_dir, get_duckdb_path
 
 router = APIRouter()
 
@@ -35,7 +37,8 @@ SortOrder = Literal["asc", "desc"]
 
 def get_analytics_service() -> AnalyticsService:
     repository = AnalyticsRepository(get_duckdb_path())
-    return AnalyticsService(repository)
+    quality_reports = QualityReportRepository(get_data_dir())
+    return AnalyticsService(repository, quality_reports)
 
 
 Service = Annotated[AnalyticsService, Depends(get_analytics_service)]
@@ -49,6 +52,11 @@ def health(service: Service) -> dict:
 @router.get("/metadata", response_model=MetadataResponse, tags=["system"])
 def metadata(service: Service) -> dict:
     return service.metadata()
+
+
+@router.get("/quality/summary", response_model=QualitySummaryResponse, tags=["quality"])
+def quality_summary(service: Service) -> dict:
+    return service.quality_summary()
 
 
 @router.get("/metrics/overview", response_model=OverviewMetrics, tags=["metrics"])

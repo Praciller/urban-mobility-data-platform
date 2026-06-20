@@ -2,6 +2,7 @@ FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    UV_LINK_MODE=copy \
     DATA_DIR=/data \
     DUCKDB_PATH=/data/processed/urban_mobility.duckdb \
     API_HOST=0.0.0.0 \
@@ -9,11 +10,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY pyproject.toml README.md ./
+COPY pyproject.toml uv.lock README.md ./
 COPY src ./src
-COPY apps ./apps
+COPY apps/api ./apps/api
 
-RUN python -m pip install --no-cache-dir .
+RUN python -m pip install --no-cache-dir uv==0.11.21 \
+    && uv sync --locked --no-dev --no-editable
+
+ENV PATH="/app/.venv/bin:${PATH}"
 
 RUN useradd --create-home --uid 10001 appuser \
     && mkdir -p /data \

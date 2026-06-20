@@ -1,9 +1,12 @@
 .git
 .github
 .planning
+.playwright-cli
 .venv
 __pycache__
+**/__pycache__
 *.pyc
+*.egg-info
 .env
 .env.*
 data
@@ -12,5 +15,7 @@ docs
 tests
 pipelines
 node_modules
+**/node_modules
+apps/web
 dist
 build

@@ -19,6 +19,8 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+  "dagster>=1.12,<2",
+  "dagster-webserver>=1.12,<2",
   "dbt-duckdb>=1.9,<2",
   "pre-commit>=4.2,<5",
   "pytest>=8.4,<9",
@@ -26,7 +28,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "pipelines/dagster_project"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
@@ -38,7 +40,10 @@ line-length = 100
 target-version = "py312"
 extend-exclude = [
   ".planning",
+  ".dagster",
   "data",
+  "dbt/target",
+  "pipelines/dagster_project/.dagster",
   "reports",
 ]
 

@@ -1,1 +1,1 @@
-"""Dagster project package scaffold."""
+"""Local Dagster project for urban mobility orchestration."""

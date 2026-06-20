@@ -35,6 +35,9 @@ jobs:
       - name: Check repository guardrails
         run: uv run python scripts/check_repo_guardrails.py
 
+      - name: Check repository readiness
+        run: uv run python scripts/check_repo_readiness.py
+
       - name: Lint
         run: uv run ruff check .
 
@@ -44,5 +47,35 @@ jobs:
       - name: Test
         run: uv run pytest
 
+      - name: Run bounded offline demo
+        env:
+          DATA_DIR: ${{ runner.temp }}/urban-mobility-demo
+        run: uv run python scripts/run_demo.py --data-dir "$DATA_DIR"
+
       - name: Validate Compose configuration
         run: docker compose config
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: "apps/web/package-lock.json"
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix apps/web
+
+      - name: Test frontend
+        run: npm --prefix apps/web test -- --run
+
+      - name: Typecheck frontend
+        run: npm --prefix apps/web run lint
+
+      - name: Build frontend
+        run: npm --prefix apps/web run build

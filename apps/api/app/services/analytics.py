@@ -12,11 +12,17 @@ from apps.api.app.repositories.analytics import (
     AnalyticsRepository,
     PageResult,
 )
+from apps.api.app.repositories.quality import QualityReportRepository
 
 
 class AnalyticsService:
-    def __init__(self, repository: AnalyticsRepository) -> None:
+    def __init__(
+        self,
+        repository: AnalyticsRepository,
+        quality_reports: QualityReportRepository,
+    ) -> None:
         self.repository = repository
+        self.quality_reports = quality_reports
 
     def health(self) -> dict[str, Any]:
         snapshot = self.repository.health_snapshot()
@@ -32,7 +38,6 @@ class AnalyticsService:
         return {
             "status": status,
             "duckdb_available": snapshot.duckdb_available,
-            "duckdb_path": str(self.repository.duckdb_path),
             "data_freshness": snapshot.data_freshness,
             "available_marts": available_marts,
             "missing_marts": missing_marts,
@@ -40,6 +45,9 @@ class AnalyticsService:
 
     def metadata(self) -> dict[str, Any]:
         return self.repository.metadata()
+
+    def quality_summary(self) -> dict[str, Any]:
+        return self.quality_reports.latest_summary()
 
     def overview(
         self,

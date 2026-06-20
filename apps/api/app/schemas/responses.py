@@ -13,7 +13,6 @@ class DateRange(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     duckdb_available: bool
-    duckdb_path: str
     data_freshness: datetime | None = None
     available_marts: list[str]
     missing_marts: list[str]
@@ -24,6 +23,23 @@ class MetadataResponse(BaseModel):
     service_status: dict[str, str]
     available_date_range: DateRange | None = None
     row_counts: dict[str, int]
+
+
+class ValidationStatusCounts(BaseModel):
+    valid: int = Field(ge=0)
+    warning: int = Field(ge=0)
+    rejected: int = Field(ge=0)
+
+
+class QualitySummaryResponse(BaseModel):
+    service: str
+    year: int
+    month: int = Field(ge=1, le=12)
+    validated_at: datetime
+    total_rows: int = Field(ge=0)
+    status_counts: ValidationStatusCounts
+    rule_counts: dict[str, int]
+    artifact_name: str
 
 
 class OverviewMetrics(BaseModel):

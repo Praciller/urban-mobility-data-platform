@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -149,6 +150,23 @@ def api_client(
 ) -> Iterator[TestClient]:
     database = tmp_path / "external-data" / "processed" / "api.duckdb"
     create_api_database(database)
+    quality_dir = database.parents[1] / "reports" / "data_quality"
+    quality_dir.mkdir(parents=True)
+    (quality_dir / "validation_2026_01.json").write_text(
+        json.dumps(
+            {
+                "service": "yellow",
+                "year": 2026,
+                "month": 1,
+                "validated_at": "2026-01-03T10:00:00Z",
+                "total_rows": 4,
+                "status_counts": {"valid": 2, "warning": 1, "rejected": 1},
+                "rule_counts": {"duplicate_record": 1, "negative_fare_amount": 1},
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("DATA_DIR", str(database.parents[1]))
     monkeypatch.setenv("DUCKDB_PATH", str(database))
     with TestClient(app) as client:
         yield client
@@ -161,6 +179,7 @@ def test_health_reports_database_and_freshness(api_client: TestClient) -> None:
     payload = response.json()
     assert payload["status"] == "ok"
     assert payload["duckdb_available"] is True
+    assert "duckdb_path" not in payload
     assert payload["data_freshness"] == "2026-01-03T10:00:00"
     assert "mart_daily_trip_metrics" in payload["available_marts"]
     assert payload["missing_marts"] == []
@@ -179,6 +198,17 @@ def test_metadata_reports_service_dates_and_counts(api_client: TestClient) -> No
     }
     assert payload["row_counts"]["fct_trips"] == 3
     assert payload["row_counts"]["mart_anomalous_trips"] == 1
+
+
+def test_quality_summary_exposes_bounded_validation_evidence(api_client: TestClient) -> None:
+    response = api_client.get("/quality/summary")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status_counts"] == {"valid": 2, "warning": 1, "rejected": 1}
+    assert payload["rule_counts"]["negative_fare_amount"] == 1
+    assert payload["artifact_name"] == "validation_2026_01.json"
+    assert "external-data" not in response.text
 
 
 def test_overview_supports_date_and_zone_filters(api_client: TestClient) -> None:
@@ -327,6 +357,27 @@ def test_query_parameter_bounds_are_enforced(api_client: TestClient) -> None:
     assert response.status_code == 422
 
 
+def test_cors_is_limited_to_local_dashboard_origins(api_client: TestClient) -> None:
+    allowed = api_client.options(
+        "/health",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    rejected = api_client.options(
+        "/health",
+        headers={
+            "Origin": "https://example.com",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+
+    assert allowed.status_code == 200
+    assert allowed.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert "access-control-allow-origin" not in rejected.headers
+
+
 def test_missing_database_has_degraded_health_and_503(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -342,7 +393,8 @@ def test_missing_database_has_degraded_health_and_503(
     assert health.json()["status"] == "unavailable"
     assert health.json()["duckdb_available"] is False
     assert overview.status_code == 503
-    assert str(missing) in overview.json()["detail"]
+    assert overview.json()["detail"] == "DuckDB database is unavailable"
+    assert str(missing) not in overview.text
 
 
 def test_missing_mart_returns_503(

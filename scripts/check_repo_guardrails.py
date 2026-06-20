@@ -8,6 +8,7 @@ from pathlib import Path
 MAX_FILE_BYTES = 1_048_576
 BLOCKED_SUFFIXES = {
     ".arrow",
+    ".bundle",
     ".db",
     ".duckdb",
     ".feather",

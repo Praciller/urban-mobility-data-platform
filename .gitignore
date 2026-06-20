@@ -20,11 +20,13 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+*.bundle
 
 # JavaScript and frontend build output
 node_modules/
 apps/web/dist/
 apps/web/.vite/
+*.tsbuildinfo
 
 # Data, databases, and generated reports
 *.parquet
@@ -54,9 +56,14 @@ dbt/logs/
 dbt/dbt_packages/
 dbt/.user.yml
 .dagster/
+.tmp_dagster_home_*/
+dagster_home/
 
 # Local workflow artifacts
 .planning/
+.codex-local-backup/
+.playwright-cli/
+output/playwright/
 docs/superpowers/plans/
 
 # Editors and operating systems
