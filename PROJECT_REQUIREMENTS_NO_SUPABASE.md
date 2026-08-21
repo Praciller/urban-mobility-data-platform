@@ -927,9 +927,9 @@ The project is considered complete when:
 
 ---
 
-## 17. Suggested Codex Execution Plan
+## 17. Suggested Engineering Execution Plan
 
-Ask Codex to implement in phases.
+Implement in phases with a bounded verification step after each phase.
 
 ### Phase 1 — Bootstrap
 
@@ -975,9 +975,9 @@ Finalize README, docs, screenshots, architecture diagrams, data model docs, oper
 
 ---
 
-## 18. Implementation Constraints for Codex
+## 18. Implementation Constraints
 
-Codex must follow these rules:
+The implementation must follow these rules:
 
 ```text
 1. Do not commit large raw data files.
