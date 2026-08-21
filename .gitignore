@@ -61,7 +61,7 @@ dagster_home/
 
 # Local workflow artifacts
 .planning/
-.codex-local-backup/
+.*-local-backup/
 .playwright-cli/
 output/playwright/
 docs/superpowers/plans/
