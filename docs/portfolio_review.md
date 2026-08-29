@@ -86,14 +86,14 @@ uv run python -m pytest tests/integration/test_validation_duckdb.py -q
 
 This uses locally generated Parquet fixtures and real DuckDB connections. The failed replacement
 changes `stable_record_hash` to an incompatible `STRUCT` type; DuckDB can read that fixture, but
-the replacement query fails after retained rows have been constructed. The loader converts that
-SQL failure to `DuckDBLoadError` and rolls back the transaction.
+the loader's replacement insert fails after the target partition has been destructively deleted
+inside the transaction. The loader converts that SQL failure to `DuckDBLoadError` and rolls back.
 
 | Scenario | Expected | Result |
 | --- | --- | --- |
 | normal first load | Known-good January rows and taxi zones commit | PASS: baseline January and February partitions are loaded |
 | same-partition rerun | Replacing the same partition does not duplicate or alter content | PASS: existing idempotency test keeps the row count and aggregate snapshot unchanged |
-| failed replacement | Incompatible January input raises the controlled error after replacement SQL begins | PASS: deterministic Parquet type mismatch raises `DuckDBLoadError` |
+| failed replacement | Incompatible January input raises the controlled error after target deletion begins | PASS: deterministic Parquet type mismatch raises `DuckDBLoadError` |
 | post-failure database | Original January IDs/content, row counts, zones, schema, uniqueness, and February rows remain intact | PASS: fresh read-only connection matches the pre-failure snapshots with no partial rows |
 | valid retry | A valid January replacement commits exactly once while February remains untouched | PASS: replacement rows are present once, the target partition is singular, and global IDs/hashes remain unique |
 

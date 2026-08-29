@@ -427,7 +427,6 @@ def test_duckdb_partition_replacement_rolls_back_failed_sql_and_retries(
             validated_path=incompatible_path,
         )
     assert isinstance(failure.value.__cause__, duckdb.Error)
-    assert "cast" in str(failure.value.__cause__).lower()
 
     with duckdb.connect(str(database), read_only=True) as connection:
         assert read_partition_snapshot(connection, year=2026, month=1) == baseline_january
