@@ -8,6 +8,16 @@ This is a portfolio project focused on data engineering fundamentals: ingestion 
 quality checks, idempotent loads, dimensional modeling, orchestration, API contracts, dashboard
 consumption, and reproducible local operations.
 
+## Recruiter snapshot
+
+**Signal:** Validated mobility ingestion with DuckDB/dbt marts, orchestration, quality checks, and a read-only analytics API.
+
+[Repository](https://github.com/Praciller/urban-mobility-data-platform) · [Dream Logs case study](https://dreamlogsdata.com/en/projects/urban-mobility-data-platform)
+
+**What this demonstrates:** bounded ingestion and rejection paths · dimensional data modeling · local orchestration with API-ready serving.
+
+**Boundary:** the default demo uses a tiny generated fixture; it is not a live or real-time NYC transport service.
+
 ## Constraints
 
 - Local-first: no cloud account required.
