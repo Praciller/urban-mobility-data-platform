@@ -209,7 +209,7 @@ docker compose up --build
 Invoke-RestMethod http://127.0.0.1:8000/health
 ```
 
-### Phase A Render readiness
+### Render deployment
 
 The repository includes a deployment-specific Render Blueprint and API image:
 `render.yaml` defines a free Singapore API Docker service and free static
@@ -220,13 +220,29 @@ not hosted. Free Render services may spin down after inactivity and have
 ephemeral runtime storage; this is suitable for a portfolio demo, not a
 production SLA or realtime system.
 
-Phase A intentionally does not contain public service URLs or perform a
-deployment. The Blueprint wires the dashboard's `VITE_API_BASE_URL` from the
-API service's `RENDER_EXTERNAL_URL`, but leaves API `CORS_ALLOWED_ORIGINS` as
-`sync: false`. This avoids a circular two-way service reference before either
-service has a final URL. Phase B must deploy the reviewed canonical `main`, set
-and verify the exact dashboard origin in `CORS_ALLOWED_ORIGINS`, and record the
-real URLs.
+The verified Phase B deployment uses these public endpoints:
+
+- Dashboard: <https://praciller-urban-mobility-dashboard.onrender.com>
+- API: <https://praciller-urban-mobility-api.onrender.com>
+- OpenAPI UI: <https://praciller-urban-mobility-api.onrender.com/docs>
+- OpenAPI JSON: <https://praciller-urban-mobility-api.onrender.com/openapi.json>
+
+Deployment record, verified September 5, 2026:
+
+- Canonical main SHA: `9fb8c96f3684e4a98d133eb064b14b67a456074c`
+- API service: `praciller-urban-mobility-api` (`srv-dae4a6n40ujc73dopd50`), free Docker web service
+- API deployment: `dep-dae4f967bikc7382405g`, clean rebuild from the canonical SHA
+- Dashboard service: `praciller-urban-mobility-dashboard` (`srv-dae4b5740ujc73dot7ag`), free static site
+- Dashboard deployment: `dep-dae4hvu7bikc7382cvh0`, clean rebuild from the canonical SHA
+- API `CORS_ALLOWED_ORIGINS`: exactly `https://praciller-urban-mobility-dashboard.onrender.com`, with no wildcard
+- Hosted checks: all documented read-only API contract endpoints returned 200; exact-origin preflight and actual requests returned the exact ACAO value; `X-Request-ID=hosted-smoke-001` was preserved and exposed
+- Browser checks: desktop and mobile verification covered all seven dashboard pages, with zero console errors, zero failed requests, and no localhost requests
+
+The hosted API's bundled DuckDB snapshot is immutable build-time sample data. It is a
+deterministic tiny 2026-01 Yellow Taxi sample, not live or realtime data. Free Render services
+may cold-start after inactivity, and free web services do not support persistent disks, so no
+keepalive or persistence claim is made. Local `DATA_DIR` remains the supported path for full
+data runs. Do not add generated data, build output, runtime logs, credentials, or secrets to Git.
 
 ## Troubleshooting
 
