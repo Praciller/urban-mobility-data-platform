@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from apps.api.app.main import app
+from apps.api.app.routes.analytics import get_analytics_service
 
 
 def create_api_database(path: Path) -> None:
@@ -176,6 +177,7 @@ def test_health_reports_database_and_freshness(api_client: TestClient) -> None:
     response = api_client.get("/health")
 
     assert response.status_code == 200
+    assert response.headers["x-request-id"]
     payload = response.json()
     assert payload["status"] == "ok"
     assert payload["duckdb_available"] is True
@@ -348,7 +350,102 @@ def test_invalid_dates_return_clear_validation_errors(api_client: TestClient) ->
         params={"start_date": "2026-01-02", "end_date": "2026-01-01"},
     )
     assert invalid_order.status_code == 422
+    assert invalid_format.headers["x-request-id"]
+    assert invalid_order.headers["x-request-id"]
     assert invalid_order.json()["detail"] == "start_date must be on or before end_date"
+
+
+def test_request_id_is_generated_propagated_and_replaced_safely(
+    api_client: TestClient,
+) -> None:
+    generated = api_client.get("/health")
+    supplied = api_client.get("/health", headers={"X-Request-ID": "observability-smoke-001"})
+    invalid = api_client.get("/health", headers={"X-Request-ID": "contains whitespace"})
+    oversized = api_client.get("/health", headers={"X-Request-ID": "x" * 129})
+
+    assert generated.headers["x-request-id"]
+    assert supplied.headers["x-request-id"] == "observability-smoke-001"
+    assert invalid.headers["x-request-id"] != "contains whitespace"
+    assert oversized.headers["x-request-id"] != "x" * 129
+
+
+def test_request_events_are_correlated_without_query_or_header_leaks(
+    api_client: TestClient,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    response = api_client.get(
+        "/health?secret-query=do-not-log",
+        headers={"X-Request-ID": "request-event-001", "Authorization": "Bearer do-not-log"},
+    )
+
+    assert response.status_code == 200
+    events = _application_events(capsys.readouterr().err)
+    request_events = [event for event in events if event.get("request_id") == "request-event-001"]
+    assert [event["event"] for event in request_events] == [
+        "api.request.started",
+        "api.request.completed",
+    ]
+    encoded = json.dumps(request_events)
+    assert "secret-query" not in encoded
+    assert "Authorization" not in encoded
+    assert "Bearer" not in encoded
+
+
+def test_handled_api_error_has_request_header_and_structured_correlation(
+    api_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setenv("DUCKDB_PATH", str(Path("missing-api-error.duckdb")))
+
+    response = api_client.get(
+        "/metrics/overview",
+        headers={"X-Request-ID": "api-error-001"},
+    )
+
+    assert response.status_code == 503
+    assert response.headers["x-request-id"] == "api-error-001"
+    events = _application_events(capsys.readouterr().err)
+    error_events = [event for event in events if event["event"] == "api.request.error"]
+    assert error_events[-1]["request_id"] == "api-error-001"
+    assert error_events[-1]["error_type"] == "DataUnavailableError"
+    assert error_events[-1]["status_code"] == 503
+
+
+def test_unexpected_api_error_is_safe_and_correlated(
+    api_client: TestClient,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    def broken_service() -> object:
+        raise RuntimeError(
+            r"private C:\Users\secret\database.duckdb Authorization Bearer secret-token"
+        )
+
+    app.dependency_overrides[get_analytics_service] = broken_service
+    try:
+        response = api_client.get(
+            "/health?query-secret=do-not-log",
+            headers={
+                "X-Request-ID": "unexpected-001",
+                "Cookie": "session=do-not-log",
+            },
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 500
+    assert response.headers["x-request-id"] == "unexpected-001"
+    assert response.json() == {"detail": "Internal server error"}
+    assert "C:\\Users\\secret" not in response.text
+    events = _application_events(capsys.readouterr().err)
+    unhandled = [event for event in events if event["event"] == "api.request.unhandled_error"]
+    assert unhandled[-1]["request_id"] == "unexpected-001"
+    assert unhandled[-1]["error_type"] == "RuntimeError"
+    encoded = json.dumps(unhandled)
+    assert "query-secret" not in encoded
+    assert "Cookie" not in encoded
+    assert "Bearer" not in encoded
+    assert "C:\\Users\\secret" not in encoded
 
 
 def test_query_parameter_bounds_are_enforced(api_client: TestClient) -> None:
@@ -363,6 +460,7 @@ def test_cors_is_limited_to_local_dashboard_origins(api_client: TestClient) -> N
         headers={
             "Origin": "http://localhost:5173",
             "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Headers": "X-Request-ID",
         },
     )
     rejected = api_client.options(
@@ -375,7 +473,11 @@ def test_cors_is_limited_to_local_dashboard_origins(api_client: TestClient) -> N
 
     assert allowed.status_code == 200
     assert allowed.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert "x-request-id" in allowed.headers["access-control-allow-headers"].lower()
     assert "access-control-allow-origin" not in rejected.headers
+
+    response = api_client.get("/health", headers={"Origin": "http://localhost:5173"})
+    assert "x-request-id" in response.headers["access-control-expose-headers"].lower()
 
 
 def test_missing_database_has_degraded_health_and_503(
@@ -413,3 +515,7 @@ def test_missing_mart_returns_503(
     assert response.json()["detail"] == (
         "Required DuckDB relation is missing: mart_daily_trip_metrics"
     )
+
+
+def _application_events(output: str) -> list[dict[str, object]]:
+    return [json.loads(line) for line in output.splitlines() if line.strip()]

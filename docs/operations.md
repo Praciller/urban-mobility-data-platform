@@ -118,6 +118,45 @@ The security job enforces `npm audit --audit-level=high`. GitHub dependency revi
 but this repository currently has Dependency Graph disabled; enabling it is an owner-controlled
 repository setting and is outside this issue's scope.
 
+## Structured observability
+
+Application-owned operational events use newline-delimited JSON on `stderr`. Each event has
+`schema_version` (`1`), a UTC RFC3339 `timestamp` with a `Z` suffix, `level`, `component`, and
+`event`; API events also carry bounded method/path/status/duration fields, while pipeline events
+carry bounded stage and service-month context. Events are intentionally separate from durable
+validation, manifest, DuckDB, dbt, and Dagster artifacts.
+
+The API accepts `X-Request-ID` only when it is 1–128 ASCII characters using letters, digits, `.`,
+`_`, `:`, or `-`. Invalid or missing values are replaced with an opaque generated ID. The resolved
+ID is available as `request.state.request_id`, returned on every response, and included in API
+request/error events. Query strings, bodies, and arbitrary headers are never logged. CORS permits
+and exposes `X-Request-ID` for the two existing local dashboard origins.
+
+`run_demo.py` creates one validated run ID per invocation, or accepts `--run-id` for deterministic
+or externally correlated runs. It propagates that ID to every child through
+`URBAN_MOBILITY_RUN_ID`, emits `pipeline.run.*` and `pipeline.stage.*` events, and includes the ID
+only in the final execution summary—not in analytical tables, quality counts, or data artifacts.
+Stage failures emit `pipeline.stage.failed` followed by `pipeline.run.failed`, then preserve the
+original exception. The final summary remains the machine-readable `stdout` result; child and
+structured operational output is directed to `stderr`.
+
+Dagster uses its native `context.run.run_id` in application-owned asset metadata through the
+central metadata helper. It does not create a second run identity or rewrite Dagster's own logs.
+Path-like values are reduced to a safe relative artifact path or basename; absolute local paths and
+secret-bearing values are not application event fields.
+
+Example events:
+
+```json
+{"schema_version":1,"timestamp":"2026-09-05T14:30:00.123Z","level":"INFO","component":"api","event":"api.request.completed","request_id":"request-001","method":"GET","path":"/health","status_code":200,"duration_ms":4.21}
+{"schema_version":1,"timestamp":"2026-09-05T14:30:00.456Z","level":"INFO","component":"demo_pipeline","event":"pipeline.stage.completed","run_id":"run-001","stage":"validate","duration_ms":42.0}
+```
+
+For troubleshooting, capture `stderr` separately from the final `stdout` JSON, parse each non-empty
+application event line, filter by `request_id` or `run_id`, then follow start → stage → completion or
+failure order. Use the existing validation summary, download manifest, DuckDB/dbt output, and
+Dagster metadata for data-quality details rather than duplicating those artifacts into logs.
+
 ## Main branch governance
 
 The default `main` branch is governed by the active repository ruleset `main-quality-gate`, which
