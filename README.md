@@ -220,6 +220,23 @@ cd apps/web
 npm run build
 ```
 
+## Phase A hosted demo readiness
+
+Phase A prepares, but does not deploy, a free Render portfolio-demo shape:
+the React/Vite dashboard is a static site and the FastAPI service is a Docker
+web service containing a deterministic 1,000-row 2026-01 yellow-taxi sample.
+The sample is generated during image build from the existing offline fixture
+flow; it is not live or realtime. Render free services can spin down when
+idle, and their runtime filesystem is disposable, so the API image treats the
+bundled DuckDB snapshot as immutable and requires no persistent disk. Dagster
+remains local-only. Final public URLs are intentionally not documented until
+Phase B deploys canonical `main` and verifies both services.
+
+- Blueprint: `render.yaml`
+- Hosted API image: `deploy/render/Dockerfile.api`
+- Hosted CORS: configure `CORS_ALLOWED_ORIGINS` from the exact dashboard origin; local defaults remain unchanged.
+- Phase A status: deployment readiness only, not deployed production evidence.
+
 ## Limitations
 
 - Yellow Taxi only.
