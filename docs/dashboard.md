@@ -61,3 +61,20 @@ npm run e2e
 Chromium projects for desktop and mobile. It exercises health/KPI/page navigation, visible filter
 requests, anomaly and data-quality evidence, API failure/retry recovery, compact navigation, and
 mobile overflow. Traces, screenshots, videos, and the HTML report remain ignored local/CI output.
+
+## Component Catalog
+
+The reusable dashboard primitives have a local Storybook catalog. Stories use deterministic
+fixtures and the production stylesheet, with viewport presets for desktop (1440px), compact
+(820px), and mobile (390px).
+
+```powershell
+cd apps/web
+npm run storybook
+npm run storybook:build
+npm run storybook:test
+```
+
+`storybook:test` runs the Storybook Vitest addon in headless Chromium. The global accessibility
+policy treats blocking axe violations as test failures. Static output is written to
+`apps/web/storybook-static/` and is ignored by Git.

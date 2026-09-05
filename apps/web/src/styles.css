@@ -16,6 +16,7 @@
   --color-sidebar-control-border: rgba(203, 213, 225, 0.55);
   --color-ink: #0f172a;
   --color-text-muted: #64748b;
+  --color-text-muted-on-warning: #5b6675;
   --color-text-subtle: #475569;
   --color-hairline: #e2e8f0;
   --color-control-border: #cbd5e1;
@@ -437,6 +438,11 @@ h3 {
 .stat-card--warning {
   border-color: var(--color-warning);
   background: var(--color-warning-surface);
+}
+
+.stat-card--warning span,
+.stat-card--warning small {
+  color: var(--color-text-muted-on-warning);
 }
 
 .stat-card--success {

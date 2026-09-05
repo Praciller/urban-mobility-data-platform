@@ -26,6 +26,7 @@ build/
 node_modules/
 apps/web/dist/
 apps/web/.vite/
+apps/web/storybook-static/
 *.tsbuildinfo
 
 # Data, databases, and generated reports
