@@ -18,6 +18,20 @@ consumption, and reproducible local operations.
 
 **Boundary:** the default demo uses a tiny generated fixture; it is not a live or real-time NYC transport service.
 
+## Verified hosted demo
+
+The reviewed canonical `main` branch is also available as a free Render portfolio demo:
+
+- [Dashboard](https://praciller-urban-mobility-dashboard.onrender.com)
+- [API](https://praciller-urban-mobility-api.onrender.com)
+- [OpenAPI documentation](https://praciller-urban-mobility-api.onrender.com/docs)
+
+The hosted dashboard reads the hosted read-only API and exposes the same seven analytics
+surfaces as the local demo. It serves the deterministic tiny 2026-01 Yellow Taxi sample bundled
+at image build time; it is not live, realtime, or production-SLA infrastructure. Render free
+services can cold-start after inactivity, and the API has no persistent disk. Local-first
+development and the full-data `DATA_DIR` workflow remain the source of truth for real runs.
+
 ## Constraints
 
 - Local-first: no cloud account required.
@@ -220,27 +234,27 @@ cd apps/web
 npm run build
 ```
 
-## Phase A hosted demo readiness
+## Render deployment shape
 
-Phase A prepares, but does not deploy, a free Render portfolio-demo shape:
+The free Render portfolio-demo shape is deployed from canonical `main`:
 the React/Vite dashboard is a static site and the FastAPI service is a Docker
 web service containing a deterministic 1,000-row 2026-01 yellow-taxi sample.
 The sample is generated during image build from the existing offline fixture
 flow; it is not live or realtime. Render free services can spin down when
 idle, and their runtime filesystem is disposable, so the API image treats the
 bundled DuckDB snapshot as immutable and requires no persistent disk. Dagster
-remains local-only. Final public URLs are intentionally not documented until
-Phase B deploys canonical `main` and verifies both services.
+remains local-only.
 
 - Blueprint: `render.yaml`
 - Hosted API image: `deploy/render/Dockerfile.api`
-- Hosted CORS: configure the `sync: false` `CORS_ALLOWED_ORIGINS` value from the exact dashboard origin; local defaults remain unchanged. Phase A intentionally avoids a two-way Blueprint service reference.
-- Phase A status: deployment readiness only, not deployed production evidence.
+- Hosted CORS: `CORS_ALLOWED_ORIGINS` is set to the exact dashboard origin
+  `https://praciller-urban-mobility-dashboard.onrender.com`; wildcard origins are not used and local defaults remain unchanged.
+- Phase B status: both hosted services were rebuilt from `9fb8c96f3684e4a98d133eb064b14b67a456074c` and verified through their public URLs.
 
 ## Limitations
 
 - Yellow Taxi only.
-- No production deployment is configured.
+- The hosted Render demo is not a production deployment or realtime service.
 - Dagster schedule is stopped by default and local/demo only.
 - The offline demo fixture is intentionally tiny and is not representative of full NYC TLC volume.
 - Optional official sample materialization requires network access and DuckDB `httpfs`.
