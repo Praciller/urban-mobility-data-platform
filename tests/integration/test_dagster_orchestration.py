@@ -79,6 +79,9 @@ def test_sample_assets_materialize_against_local_fixture(tmp_path: Path) -> None
     )
 
     assert result.success
+    materializations = result.asset_materializations_for_node("analytics_ready")
+    assert materializations
+    assert materializations[0].metadata["run_id"].value == result.run_id
     with duckdb.connect(str(duckdb_path), read_only=True) as connection:
         trip_count = connection.execute("select count(*) from fct_trips").fetchone()
         daily_count = connection.execute("select count(*) from mart_daily_trip_metrics").fetchone()

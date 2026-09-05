@@ -371,7 +371,12 @@ def _project_root() -> Path:
 
 
 def _add_metadata(context: AssetExecutionContext, metadata: dict[str, Any]) -> None:
-    context.add_output_metadata({key: _metadata_value(value) for key, value in metadata.items()})
+    context.add_output_metadata(
+        {
+            key: _metadata_value(value)
+            for key, value in {**metadata, "run_id": context.run.run_id}.items()
+        }
+    )
 
 
 def _metadata_value(value: Any) -> object:
