@@ -60,8 +60,8 @@ flowchart LR
 | Data pipeline | PyArrow, DuckDB, dbt-duckdb |
 | Orchestration | Dagster local UI, assets, jobs, stopped schedule |
 | API | FastAPI, Pydantic, Uvicorn |
-| Dashboard | React, Vite, Recharts, Vitest |
-| Quality | pytest, Ruff, ESLint, Prettier, Vitest, Playwright, npm audit, GitHub Actions |
+| Dashboard | React, Vite, Recharts, Vitest, Storybook, axe |
+| Quality | pytest, Ruff, ESLint, Prettier, Vitest, Storybook, Playwright, npm audit, GitHub Actions |
 
 ## Quickstart
 
@@ -124,7 +124,8 @@ The end-to-end demo path is documented in [docs/local_demo.md](docs/local_demo.m
 | `uv run pytest` | Run Python tests |
 | `uv run ruff check .` and `uv run ruff format --check .` | Lint and format check |
 | `uv run python scripts/check_repo_readiness.py` | Check publish-readiness guardrails |
-| `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build` from `apps/web` | Format, lint, typecheck, unit test, and build dashboard |
+| `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm run audit` from `apps/web` | Format, lint, typecheck, unit test, build, and audit dashboard |
+| `npm run storybook`, `npm run storybook:build`, `npm run storybook:test` from `apps/web` | Open the component catalog, build the static catalog, and run Chromium-backed Storybook interaction and accessibility checks |
 | `npm run e2e:install` and `npm run e2e` from `apps/web` | Install Chromium and run deterministic desktop/mobile browser checks |
 | `npm audit --audit-level=high` from `apps/web` | Check frontend dependencies for high/critical advisories |
 
