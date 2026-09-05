@@ -93,7 +93,11 @@ export function AppShell({
             >
               {health?.duckdb_available ? "DuckDB connected" : "DuckDB status pending"}
             </span>
-            <small>{health?.data_freshness ? `Freshness ${formatDateTime(health.data_freshness)}` : "Local sample mode"}</small>
+            <small>
+              {health?.data_freshness
+                ? `Freshness ${formatDateTime(health.data_freshness)}`
+                : "Local sample mode"}
+            </small>
           </div>
         </header>
 

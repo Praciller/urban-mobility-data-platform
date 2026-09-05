@@ -55,11 +55,19 @@ Use a temporary/external `DATA_DIR` when the canonical local path is not appropr
 ```powershell
 npm ci --prefix apps/web
 npm --prefix apps/web test -- --run
+npm --prefix apps/web run format:check
 npm --prefix apps/web run lint
+npm --prefix apps/web run typecheck
 npm --prefix apps/web run build
+npm --prefix apps/web run e2e:install
+npm --prefix apps/web run e2e
+npm audit --prefix apps/web --audit-level=high
 ```
 
-`apps/web` currently names its TypeScript no-emit check `lint`; do not describe it as ESLint until an actual ESLint gate exists.
+The frontend CI gates are independent jobs: `web-format`, `web-lint`, `web-typecheck`, `web-unit`,
+`web-build`, and `web-e2e`. `dependency-security` runs npm audit and dependency review on pull
+requests. Playwright reports, traces, screenshots, and videos are local/CI artifacts only and are
+ignored by Git.
 
 ## Frontend rules
 

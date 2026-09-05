@@ -87,11 +87,33 @@ npm run dev -- --host 127.0.0.1
 Checks:
 
 ```powershell
-npm test
+npm run format:check
 npm run lint
+npm run typecheck
+npm run test
 npm run build
-npm audit --omit=optional
+npm audit --audit-level=high
 ```
+
+The deterministic browser gate creates the tiny sample dataset in the system temporary directory,
+starts the local API and Vite server, and tests Chromium at desktop and mobile viewports:
+
+```powershell
+uv sync --locked --all-groups
+npm run e2e:install
+npm run e2e
+```
+
+If port `8000` is already in use, choose another API port for the local run:
+
+```powershell
+$env:URBAN_MOBILITY_E2E_API_PORT = "8002"
+npm run e2e
+```
+
+Failure diagnostics are written to ignored `playwright-report/` and `test-results/` directories.
+CI publishes those directories as the `playwright-report` artifact. The `web-format`, `web-lint`,
+`web-typecheck`, `web-unit`, `web-build`, and `web-e2e` checks are intentionally independent.
 
 ## Readiness
 

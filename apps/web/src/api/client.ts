@@ -60,7 +60,11 @@ export async function requestJson<ResponseT>(
 
   if (!response.ok) {
     const detail = await readErrorDetail(response);
-    throw new ApiError(detail || `Request failed with HTTP ${response.status}`, path, response.status);
+    throw new ApiError(
+      detail || `Request failed with HTTP ${response.status}`,
+      path,
+      response.status,
+    );
   }
 
   return (await response.json()) as ResponseT;

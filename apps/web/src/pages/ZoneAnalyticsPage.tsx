@@ -19,7 +19,11 @@ export function ZoneAnalyticsPage({ data }: { data: DashboardData }) {
 
       {summary ? (
         <section className="stat-grid">
-          <StatCard label="Selected zone" value={summary.zone_name} detail={`${summary.borough} / ${summary.service_zone}`} />
+          <StatCard
+            label="Selected zone"
+            value={summary.zone_name}
+            detail={`${summary.borough} / ${summary.service_zone}`}
+          />
           <StatCard label="Pickups" value={formatNumber(summary.pickup_trip_count)} />
           <StatCard label="Dropoffs" value={formatNumber(summary.dropoff_trip_count)} />
           <StatCard label="Related trips" value={formatNumber(summary.related_trip_count)} />
@@ -33,7 +37,10 @@ export function ZoneAnalyticsPage({ data }: { data: DashboardData }) {
           <h3>Top pickup zones</h3>
           <BarChartPanel
             bars={[{ key: "pickup_trip_count", name: "Pickups", tone: "primary" }]}
-            data={data.zones.items.map((zone) => ({ ...zone, label: `${zone.zone_id}: ${zone.zone_name}` }))}
+            data={data.zones.items.map((zone) => ({
+              ...zone,
+              label: `${zone.zone_id}: ${zone.zone_name}`,
+            }))}
             emptyTitle="No zone metrics available"
             xKey="label"
           />
@@ -48,9 +55,21 @@ export function ZoneAnalyticsPage({ data }: { data: DashboardData }) {
             { header: "Borough", render: (row) => row.borough },
             { header: "Service zone", render: (row) => row.service_zone },
             { header: "Airport", render: (row) => (row.is_airport_zone ? "Yes" : "No") },
-            { header: "Pickups", align: "right", render: (row) => formatNumber(row.pickup_trip_count) },
-            { header: "Revenue", align: "right", render: (row) => formatCurrency(row.total_revenue) },
-            { header: "Avg distance", align: "right", render: (row) => formatMiles(row.average_trip_distance) },
+            {
+              header: "Pickups",
+              align: "right",
+              render: (row) => formatNumber(row.pickup_trip_count),
+            },
+            {
+              header: "Revenue",
+              align: "right",
+              render: (row) => formatCurrency(row.total_revenue),
+            },
+            {
+              header: "Avg distance",
+              align: "right",
+              render: (row) => formatMiles(row.average_trip_distance),
+            },
           ]}
           emptyTitle="No zone metrics available"
           getRowKey={(row) => row.zone_id}

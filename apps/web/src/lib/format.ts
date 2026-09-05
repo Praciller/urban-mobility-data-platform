@@ -70,5 +70,7 @@ export function formatPaymentType(value: number): string {
 export function formatServices(services: string[]): string {
   if (services.length === 0) return "No services";
   if (services.length === 1 && services[0] === "yellow") return "Yellow Taxi only";
-  return services.map((service) => `${service[0]?.toUpperCase() ?? ""}${service.slice(1)}`).join(", ");
+  return services
+    .map((service) => `${service[0]?.toUpperCase() ?? ""}${service.slice(1)}`)
+    .join(", ");
 }

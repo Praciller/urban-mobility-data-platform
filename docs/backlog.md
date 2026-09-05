@@ -59,7 +59,8 @@ to implement deployment, authentication, paid services, or new dataset services 
 ## Security
 
 - Expand secret-marker checks if new integrations are added.
-- Add dependency audit commands for Python and Node.
+- Keep the npm audit and dependency-review CI gates current; evaluate a Python advisory scanner
+  separately if Python dependency policy or risk changes.
 - Keep API read-only unless a future requirements document explicitly approves writes.
 
 ## Portfolio Polish

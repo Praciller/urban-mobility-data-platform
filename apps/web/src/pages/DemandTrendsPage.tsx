@@ -1,7 +1,13 @@
 import { BarChartPanel, LineChartPanel } from "../components/Charts";
 import { DataTable } from "../components/DataTable";
 import type { DashboardData, DailyMetric } from "../api/types";
-import { formatCurrency, formatDate, formatDuration, formatMiles, formatNumber } from "../lib/format";
+import {
+  formatCurrency,
+  formatDate,
+  formatDuration,
+  formatMiles,
+  formatNumber,
+} from "../lib/format";
 
 export function DemandTrendsPage({ data }: { data: DashboardData }) {
   return (
@@ -42,10 +48,22 @@ export function DemandTrendsPage({ data }: { data: DashboardData }) {
           columns={[
             { header: "Date", render: (row) => formatDate(row.pickup_date) },
             { header: "Trips", align: "right", render: (row) => formatNumber(row.trip_count) },
-            { header: "Passengers", align: "right", render: (row) => formatNumber(row.passenger_count) },
+            {
+              header: "Passengers",
+              align: "right",
+              render: (row) => formatNumber(row.passenger_count),
+            },
             { header: "Distance", align: "right", render: (row) => formatMiles(row.trip_distance) },
-            { header: "Revenue", align: "right", render: (row) => formatCurrency(row.total_revenue) },
-            { header: "Duration", align: "right", render: (row) => formatDuration(row.average_duration_minutes) },
+            {
+              header: "Revenue",
+              align: "right",
+              render: (row) => formatCurrency(row.total_revenue),
+            },
+            {
+              header: "Duration",
+              align: "right",
+              render: (row) => formatDuration(row.average_duration_minutes),
+            },
           ]}
           emptyTitle="No daily metrics available"
           getRowKey={(row) => row.pickup_date}
