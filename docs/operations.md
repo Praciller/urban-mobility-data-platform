@@ -118,6 +118,26 @@ The security job enforces `npm audit --audit-level=high`. GitHub dependency revi
 but this repository currently has Dependency Graph disabled; enabling it is an owner-controlled
 repository setting and is outside this issue's scope.
 
+## Main branch governance
+
+The default `main` branch is governed by the active repository ruleset `main-quality-gate`, which
+targets `refs/heads/main`.
+
+- Changes must arrive through a pull request. This repository is maintained as a solo project, so
+  zero human approvals are required; code-owner, last-push, stale-review, review-thread, and
+  unattributed-change approval requirements are disabled.
+- The required GitHub Actions checks are `python`, `web-format`, `web-lint`, `web-typecheck`,
+  `web-unit`, `web-build`, `web-e2e`, `web-storybook`, and `dependency-security`. Each is tied to
+  the GitHub Actions integration configured in the ruleset.
+- The strict/up-to-date status policy is disabled because the suite includes expensive browser and
+  Storybook jobs. A pull request must still pass every required check; it is not forced to rerun
+  only because `main` advanced after the check completed.
+- Branch deletion and non-fast-forward updates (including force pushes) are blocked. No permanent
+  bypass actor is configured. Owner/admin recovery requires an explicit ruleset administration
+  action and remains auditable.
+- Squash is the preferred normal merge method. Merge and rebase remain allowed because the
+  repository's existing merge methods are unchanged.
+
 ## Readiness
 
 ```powershell
