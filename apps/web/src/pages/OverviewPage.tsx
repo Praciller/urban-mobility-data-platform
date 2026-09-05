@@ -18,7 +18,6 @@ export function OverviewPage({ data }: { data: DashboardData }) {
     <div className="page-stack">
       <section className="hero-card">
         <div>
-          <p className="eyebrow">Portfolio MVP</p>
           <h2>Overview</h2>
           <p>
             <strong className="inline-highlight">{formatServices(metadata.supported_services)}</strong>
@@ -56,7 +55,6 @@ export function OverviewPage({ data }: { data: DashboardData }) {
             <article className="panel panel--wide">
               <div className="panel-heading">
                 <div>
-                  <p className="eyebrow">Demand</p>
                   <h3>Daily trip and revenue trend</h3>
                 </div>
               </div>
@@ -64,8 +62,8 @@ export function OverviewPage({ data }: { data: DashboardData }) {
                 data={daily.items}
                 emptyTitle="No daily metrics available"
                 lines={[
-                  { key: "trip_count", name: "Trips", color: "#2563eb" },
-                  { key: "total_revenue", name: "Revenue", color: "#f59e0b" },
+                  { key: "trip_count", name: "Trips", tone: "primary" },
+                  { key: "total_revenue", name: "Revenue", tone: "accent" },
                 ]}
                 xKey="pickup_date"
               />
@@ -74,12 +72,11 @@ export function OverviewPage({ data }: { data: DashboardData }) {
             <article className="panel">
               <div className="panel-heading">
                 <div>
-                  <p className="eyebrow">Hourly demand</p>
                   <h3>Pickup volume by hour</h3>
                 </div>
               </div>
               <BarChartPanel
-                bars={[{ key: "trip_count", name: "Trips", color: "#0f766e" }]}
+                bars={[{ key: "trip_count", name: "Trips", tone: "secondary" }]}
                 data={hourly.items}
                 emptyTitle="No hourly demand metrics available"
                 xKey="pickup_hour"

@@ -26,6 +26,31 @@ describe("Urban mobility dashboard", () => {
     expect(screen.getByText("Yellow Taxi only")).toBeInTheDocument();
   });
 
+  test("discloses compact navigation and exposes the selected page", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const toggle = await screen.findByRole("button", { name: "Open dashboard navigation" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: "Overview" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+
+    await user.tab();
+    expect(toggle).toHaveFocus();
+    await user.keyboard("{Enter}");
+
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await user.click(screen.getByRole("button", { name: "Demand Trends" }));
+
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: "Demand Trends" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  });
+
   test("renders API unavailable state when requests fail", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new Error("offline"))));
 

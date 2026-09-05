@@ -7,7 +7,6 @@ export function RevenueAnalyticsPage({ data }: { data: DashboardData }) {
   return (
     <div className="page-stack">
       <section className="page-heading">
-        <p className="eyebrow">Revenue</p>
         <h2>Revenue Analytics</h2>
         <p>Payment-type and revenue-per-mile metrics from `/metrics/revenue`.</p>
       </section>
@@ -16,7 +15,7 @@ export function RevenueAnalyticsPage({ data }: { data: DashboardData }) {
         <article className="panel panel--wide">
           <h3>Total revenue by date and payment type</h3>
           <BarChartPanel
-            bars={[{ key: "total_revenue", name: "Total revenue", color: "#f59e0b" }]}
+            bars={[{ key: "total_revenue", name: "Total revenue", tone: "accent" }]}
             data={data.revenue.items.map((row) => ({
               ...row,
               label: `${row.pickup_date} / ${formatPaymentType(row.payment_type)}`,

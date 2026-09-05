@@ -5,7 +5,7 @@ interface EmptyStateProps {
 
 export function LoadingState() {
   return (
-    <section className="state-card" aria-live="polite">
+    <section aria-live="polite" className="state-card" role="status">
       <div className="spinner" aria-hidden="true" />
       <h1>Loading local mobility analytics</h1>
       <p>Reading the local FastAPI service and DuckDB-backed marts.</p>
@@ -15,8 +15,7 @@ export function LoadingState() {
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <section className="state-card state-card--error">
-      <p className="eyebrow">Read-only API</p>
+    <section aria-live="assertive" className="state-card state-card--error" role="alert">
       <h1>API unavailable</h1>
       <p>Start the local FastAPI service, then retry the dashboard request.</p>
       <code>uv run uvicorn apps.api.app.main:app --reload --host 127.0.0.1 --port 8000</code>

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { dashboardPages, limitOptions } from "../lib/filters";
 import type { DashboardFilters, DashboardPageId } from "../lib/filters";
@@ -30,12 +30,29 @@ export function AppShell({
   onPageChange,
   onReload,
 }: AppShellProps) {
-  const activeLabel = dashboardPages.find((page) => page.id === activePage)?.label ?? "Overview";
+  const [isNavigationOpen, setIsNavigationOpen] = useState(false);
   const dateRange = metadata?.available_date_range;
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <div className="mobile-nav-bar">
+        <span className="mobile-nav-label">Dashboard navigation</span>
+        <button
+          aria-controls="dashboard-navigation"
+          aria-expanded={isNavigationOpen}
+          className="mobile-nav-toggle"
+          onClick={() => setIsNavigationOpen((isOpen) => !isOpen)}
+          type="button"
+        >
+          {isNavigationOpen ? "Close dashboard navigation" : "Open dashboard navigation"}
+        </button>
+      </div>
+
+      <aside
+        className={isNavigationOpen ? "sidebar sidebar--open" : "sidebar"}
+        id="dashboard-navigation"
+        aria-label="Primary dashboard navigation"
+      >
         <div className="brand">
           <span className="brand-mark">UM</span>
           <div>
@@ -46,10 +63,13 @@ export function AppShell({
         <nav aria-label="Dashboard pages">
           {dashboardPages.map((page) => (
             <button
-              aria-pressed={activePage === page.id}
               className={activePage === page.id ? "nav-link nav-link--active" : "nav-link"}
               key={page.id}
-              onClick={() => onPageChange(page.id)}
+              onClick={() => {
+                onPageChange(page.id);
+                setIsNavigationOpen(false);
+              }}
+              aria-current={activePage === page.id ? "page" : undefined}
               type="button"
             >
               {page.label}
@@ -61,15 +81,17 @@ export function AppShell({
       <div className="workspace">
         <header className="topbar">
           <div>
-            <p className="eyebrow">{activeLabel}</p>
             <h1>NYC TLC Mobility Intelligence</h1>
             <p className="subtitle">
               Read-only dashboard over local DuckDB marts and the FastAPI analytics API.
             </p>
           </div>
           <div className="status-stack">
-            <span className={health?.duckdb_available ? "status-pill status-pill--ok" : "status-pill"}>
-              {health?.duckdb_available ? "DuckDB connected" : "DuckDB pending"}
+            <span
+              className={health?.duckdb_available ? "status-pill status-pill--ok" : "status-pill"}
+              role="status"
+            >
+              {health?.duckdb_available ? "DuckDB connected" : "DuckDB status pending"}
             </span>
             <small>{health?.data_freshness ? `Freshness ${formatDateTime(health.data_freshness)}` : "Local sample mode"}</small>
           </div>

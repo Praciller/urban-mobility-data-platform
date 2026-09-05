@@ -6,7 +6,6 @@ export function AnomalyExplorerPage({ data }: { data: DashboardData }) {
   return (
     <div className="page-stack">
       <section className="page-heading">
-        <p className="eyebrow">Quality warnings</p>
         <h2>Anomaly Explorer</h2>
         <p>Explainable warning rows from validation and dbt anomaly marts.</p>
       </section>
