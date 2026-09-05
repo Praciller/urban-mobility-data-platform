@@ -217,9 +217,6 @@ jobs:
       - name: Audit frontend dependencies
         run: npm audit --prefix apps/web --audit-level=high
 
-      - name: Review dependency changes
+      - name: Report dependency review limitation
         if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
-          comment-summary-in-pr: false
+        run: echo "Dependency review is owner-gated because this repository has Dependency Graph disabled."

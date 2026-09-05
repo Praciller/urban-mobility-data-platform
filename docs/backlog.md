@@ -59,8 +59,9 @@ to implement deployment, authentication, paid services, or new dataset services 
 ## Security
 
 - Expand secret-marker checks if new integrations are added.
-- Keep the npm audit and dependency-review CI gates current; evaluate a Python advisory scanner
-  separately if Python dependency policy or risk changes.
+- Keep the npm audit CI gate current; enable GitHub dependency review after the owner enables the
+  repository Dependency Graph, and evaluate a Python advisory scanner separately if Python
+  dependency policy or risk changes.
 - Keep API read-only unless a future requirements document explicitly approves writes.
 
 ## Portfolio Polish

@@ -65,9 +65,9 @@ npm audit --prefix apps/web --audit-level=high
 ```
 
 The frontend CI gates are independent jobs: `web-format`, `web-lint`, `web-typecheck`, `web-unit`,
-`web-build`, and `web-e2e`. `dependency-security` runs npm audit and dependency review on pull
-requests. Playwright reports, traces, screenshots, and videos are local/CI artifacts only and are
-ignored by Git.
+`web-build`, and `web-e2e`. `dependency-security` runs npm audit; GitHub dependency review was
+evaluated but is owner-gated while this repository's Dependency Graph is disabled. Playwright
+reports, traces, screenshots, and videos are local/CI artifacts only and are ignored by Git.
 
 ## Frontend rules
 

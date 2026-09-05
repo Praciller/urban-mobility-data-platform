@@ -114,6 +114,9 @@ npm run e2e
 Failure diagnostics are written to ignored `playwright-report/` and `test-results/` directories.
 CI publishes those directories as the `playwright-report` artifact. The `web-format`, `web-lint`,
 `web-typecheck`, `web-unit`, `web-build`, and `web-e2e` checks are intentionally independent.
+The security job enforces `npm audit --audit-level=high`. GitHub dependency review was evaluated,
+but this repository currently has Dependency Graph disabled; enabling it is an owner-controlled
+repository setting and is outside this issue's scope.
 
 ## Readiness
 
