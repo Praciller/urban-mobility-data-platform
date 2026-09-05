@@ -222,7 +222,7 @@ npm run build
 
 ## Limitations
 
-## Phase A hosted demo readiness
+### Phase A hosted demo readiness
 
 Phase A prepares, but does not deploy, a free Render portfolio-demo shape:
 the React/Vite dashboard is a static site and the FastAPI service is a Docker

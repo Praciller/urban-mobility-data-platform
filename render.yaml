@@ -14,6 +14,7 @@ services:
   - type: web
     name: praciller-urban-mobility-dashboard
     runtime: static
+    autoDeployTrigger: checksPass
     buildCommand: npm ci --prefix apps/web && npm --prefix apps/web run build
     staticPublishPath: ./apps/web/dist
     envVars:
