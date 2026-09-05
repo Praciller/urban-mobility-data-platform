@@ -9,14 +9,12 @@ services:
     autoDeployTrigger: checksPass
     envVars:
       - key: CORS_ALLOWED_ORIGINS
-        fromService:
-          type: web
-          name: praciller-urban-mobility-dashboard
-          envVarKey: RENDER_EXTERNAL_URL
+        sync: false
 
   - type: web
     name: praciller-urban-mobility-dashboard
     runtime: static
+    autoDeployTrigger: checksPass
     buildCommand: npm ci --prefix apps/web && npm --prefix apps/web run build
     staticPublishPath: ./apps/web/dist
     envVars:

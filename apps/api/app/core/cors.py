@@ -12,9 +12,22 @@ def get_allowed_origins(raw: str | None) -> list[str]:
     origins: list[str] = []
     for candidate in raw.split(","):
         origin = candidate.strip().rstrip("/")
-        parsed = urlparse(origin)
+        try:
+            parsed = urlparse(origin)
+            hostname = parsed.hostname
+            port = parsed.port
+        except ValueError:
+            continue
         invalid_parts = (
-            parsed.path or parsed.params or parsed.query or parsed.fragment or "*" in origin
+            parsed.path
+            or parsed.params
+            or parsed.query
+            or parsed.fragment
+            or parsed.username
+            or parsed.password
+            or hostname is None
+            or (port is None and parsed.netloc.endswith(":"))
+            or "*" in origin
         )
         if parsed.scheme not in {"http", "https"} or not parsed.netloc or invalid_parts:
             continue

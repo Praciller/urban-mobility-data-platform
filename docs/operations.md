@@ -221,8 +221,12 @@ ephemeral runtime storage; this is suitable for a portfolio demo, not a
 production SLA or realtime system.
 
 Phase A intentionally does not contain public service URLs or perform a
-deployment. Phase B must deploy the reviewed canonical `main`, set/verify the
-exact dashboard origin in `CORS_ALLOWED_ORIGINS`, and record the real URLs.
+deployment. The Blueprint wires the dashboard's `VITE_API_BASE_URL` from the
+API service's `RENDER_EXTERNAL_URL`, but leaves API `CORS_ALLOWED_ORIGINS` as
+`sync: false`. This avoids a circular two-way service reference before either
+service has a final URL. Phase B must deploy the reviewed canonical `main`, set
+and verify the exact dashboard origin in `CORS_ALLOWED_ORIGINS`, and record the
+real URLs.
 
 ## Troubleshooting
 
