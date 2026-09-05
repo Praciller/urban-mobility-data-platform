@@ -1,0 +1,58 @@
+name: Bug report
+description: Reproducible defect with observed evidence and regression criteria
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Diagnose before fixing. Capture a reliable reproduction and evidence from the actual failure path; do not start from a guessed cause.
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: What actually happens? Include the exact safe error/output when useful.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should happen instead, and where is that expectation defined?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Smallest deterministic steps/command/data state that reproduces the defect.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Logs, failing test, screenshot, affected service month, route, or file/function. Remove secrets and local private paths.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Regression acceptance criteria
+      description: State how the fix will be proven without merely copying current implementation behavior.
+      placeholder: |
+        - Given the minimal repro, when the fix is applied, then ...
+        - Existing unrelated behavior remains ...
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: Focused regression test plus the full affected gate.
+      placeholder: "- Focused test: ...\n- Full gate: ..."
+    validations:
+      required: true

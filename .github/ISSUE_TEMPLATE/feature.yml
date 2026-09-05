@@ -1,0 +1,66 @@
+name: Feature / improvement
+description: Agent-ready feature or improvement with explicit scope and acceptance criteria
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep the issue small enough to implement and review as one bounded slice. Link durable architecture/design decisions to an ADR instead of hiding rationale in comments.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / outcome
+      description: What problem are we solving and what observable outcome should change?
+      placeholder: Describe the user/reviewer/engineering problem, not the implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and evidence
+      description: Relevant files, screenshots, metrics, prior issues, or constraints.
+      placeholder: "Authoritative requirement: ...\nRelevant files: ..."
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: The smallest implementation surface needed for this issue.
+      placeholder: "- ..."
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      description: Adjacent work that this issue must not absorb.
+      placeholder: "- ..."
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Prefer independently testable Given / When / Then statements.
+      placeholder: |
+        - Given ..., when ..., then ...
+        - Given ..., when ..., then ...
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: Exact tests/checks/browser evidence required before this issue is complete.
+      placeholder: "- Command or browser flow ..."
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / constraints
+      description: Data integrity, security, accessibility, performance, compatibility, or rollout concerns.
+      placeholder: "None known, or list them explicitly."
+    validations:
+      required: true
