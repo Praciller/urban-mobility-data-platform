@@ -199,6 +199,21 @@ The local monthly schedule is stopped by default. It is for demos only.
 
 ## Docker
 
+## Phase A Render readiness
+
+The repository includes a deployment-specific Render Blueprint and API image:
+`render.yaml` defines a free Singapore API Docker service and free static
+dashboard, while `deploy/render/Dockerfile.api` generates the bounded
+2026-01 yellow sample at image build time. The runtime image contains the
+DuckDB snapshot and does not run dbt or require a persistent disk. Dagster is
+not hosted. Free Render services may spin down after inactivity and have
+ephemeral runtime storage; this is suitable for a portfolio demo, not a
+production SLA or realtime system.
+
+Phase A intentionally does not contain public service URLs or perform a
+deployment. Phase B must deploy the reviewed canonical `main`, set/verify the
+exact dashboard origin in `CORS_ALLOWED_ORIGINS`, and record the real URLs.
+
 The default image starts FastAPI and expects a populated DuckDB database mounted at
 `/data/processed/urban_mobility.duckdb`. Compose bind-mounts `DATA_DIR` to `/data`, so run the
 offline demo against the same `DATA_DIR` before starting the container.

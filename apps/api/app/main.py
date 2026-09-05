@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import os
 import time
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from apps.api.app.core.cors import get_allowed_origins
 from apps.api.app.core.errors import ApiError
 from apps.api.app.routes.analytics import router
 from urban_mobility.observability import (
@@ -23,7 +25,7 @@ def create_app() -> FastAPI:
     )
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+        allow_origins=get_allowed_origins(os.getenv("CORS_ALLOWED_ORIGINS")),
         allow_methods=["GET"],
         allow_headers=["Accept", "Content-Type", REQUEST_ID_HEADER],
         expose_headers=[REQUEST_ID_HEADER],
