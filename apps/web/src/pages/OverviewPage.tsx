@@ -20,7 +20,9 @@ export function OverviewPage({ data }: { data: DashboardData }) {
         <div>
           <h2>Overview</h2>
           <p>
-            <strong className="inline-highlight">{formatServices(metadata.supported_services)}</strong>
+            <strong className="inline-highlight">
+              {formatServices(metadata.supported_services)}
+            </strong>
             <span> with local sample data, read-only API calls, and no cloud dependencies.</span>
           </p>
         </div>
@@ -38,11 +40,31 @@ export function OverviewPage({ data }: { data: DashboardData }) {
       ) : (
         <>
           <section className="stat-grid">
-            <StatCard label="Trips" value={formatCompactNumber(overview.total_trips)} detail="Filtered total" />
-            <StatCard label="Revenue" value={formatCurrency(overview.total_revenue)} detail="Total amount" />
-            <StatCard label="Average fare" value={formatCurrency(overview.average_fare)} detail="Per trip" />
-            <StatCard label="Average duration" value={formatDuration(overview.average_duration_minutes)} detail="Trip time" />
-            <StatCard label="Distance" value={formatMiles(overview.total_distance)} detail="Total miles" />
+            <StatCard
+              label="Trips"
+              value={formatCompactNumber(overview.total_trips)}
+              detail="Filtered total"
+            />
+            <StatCard
+              label="Revenue"
+              value={formatCurrency(overview.total_revenue)}
+              detail="Total amount"
+            />
+            <StatCard
+              label="Average fare"
+              value={formatCurrency(overview.average_fare)}
+              detail="Per trip"
+            />
+            <StatCard
+              label="Average duration"
+              value={formatDuration(overview.average_duration_minutes)}
+              detail="Trip time"
+            />
+            <StatCard
+              label="Distance"
+              value={formatMiles(overview.total_distance)}
+              detail="Total miles"
+            />
             <StatCard
               detail={`${formatNumber(overview.warning_trip_count)} warning trips`}
               label="Airport trips"

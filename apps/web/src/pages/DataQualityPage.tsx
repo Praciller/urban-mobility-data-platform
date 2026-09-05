@@ -10,7 +10,10 @@ interface DataQualityPageProps {
 }
 
 export function DataQualityPage({ data, exportUrl }: DataQualityPageProps) {
-  const rowCounts = Object.entries(data.metadata.row_counts).map(([relation, rows]) => ({ relation, rows }));
+  const rowCounts = Object.entries(data.metadata.row_counts).map(([relation, rows]) => ({
+    relation,
+    rows,
+  }));
   const marts = data.health.available_marts.map((mart) => ({ mart, status: "available" }));
   const missing = data.health.missing_marts.map((mart) => ({ mart, status: "missing" }));
   const dateRange = data.metadata.available_date_range;
@@ -23,16 +26,41 @@ export function DataQualityPage({ data, exportUrl }: DataQualityPageProps) {
     <div className="page-stack">
       <section className="page-heading">
         <h2>Data Quality / Pipeline Status</h2>
-        <p>Local DuckDB health, mart availability, and row counts from `/health` and `/metadata`.</p>
+        <p>
+          Local DuckDB health, mart availability, and row counts from `/health` and `/metadata`.
+        </p>
       </section>
 
       <section className="stat-grid">
-        <StatCard label="API status" value={data.health.status} detail={data.health.duckdb_available ? "DuckDB available" : "DuckDB unavailable"} />
-        <StatCard label="Data freshness" value={formatDateTime(data.health.data_freshness)} valueSize="compact" />
-        <StatCard label="Available marts" value={formatNumber(data.health.available_marts.length)} />
-        <StatCard label="Missing marts" tone={data.health.missing_marts.length > 0 ? "warning" : "success"} value={formatNumber(data.health.missing_marts.length)} />
-        <StatCard label="Rejected rows" tone={data.quality?.status_counts.rejected ? "warning" : "success"} value={formatNumber(data.quality?.status_counts.rejected)} />
-        <StatCard label="Warning rows" tone={data.quality?.status_counts.warning ? "warning" : "success"} value={formatNumber(data.quality?.status_counts.warning)} />
+        <StatCard
+          label="API status"
+          value={data.health.status}
+          detail={data.health.duckdb_available ? "DuckDB available" : "DuckDB unavailable"}
+        />
+        <StatCard
+          label="Data freshness"
+          value={formatDateTime(data.health.data_freshness)}
+          valueSize="compact"
+        />
+        <StatCard
+          label="Available marts"
+          value={formatNumber(data.health.available_marts.length)}
+        />
+        <StatCard
+          label="Missing marts"
+          tone={data.health.missing_marts.length > 0 ? "warning" : "success"}
+          value={formatNumber(data.health.missing_marts.length)}
+        />
+        <StatCard
+          label="Rejected rows"
+          tone={data.quality?.status_counts.rejected ? "warning" : "success"}
+          value={formatNumber(data.quality?.status_counts.rejected)}
+        />
+        <StatCard
+          label="Warning rows"
+          tone={data.quality?.status_counts.warning ? "warning" : "success"}
+          value={formatNumber(data.quality?.status_counts.warning)}
+        />
       </section>
 
       <section className="panel-grid">
@@ -41,8 +69,15 @@ export function DataQualityPage({ data, exportUrl }: DataQualityPageProps) {
           {data.quality ? (
             <DataTable
               columns={[
-                { header: "Rule", render: (row: { rule: string; rows: number }) => <code>{row.rule}</code> },
-                { header: "Rows", align: "right", render: (row: { rule: string; rows: number }) => formatNumber(row.rows) },
+                {
+                  header: "Rule",
+                  render: (row: { rule: string; rows: number }) => <code>{row.rule}</code>,
+                },
+                {
+                  header: "Rows",
+                  align: "right",
+                  render: (row: { rule: string; rows: number }) => formatNumber(row.rows),
+                },
               ]}
               emptyTitle="No validation rules fired"
               getRowKey={(row) => row.rule}
@@ -65,10 +100,22 @@ export function DataQualityPage({ data, exportUrl }: DataQualityPageProps) {
           <h3>Latest validation artifact</h3>
           {data.quality ? (
             <div className="metadata-grid metadata-grid--compact">
-              <div><span>Artifact</span><strong>{data.quality.artifact_name}</strong></div>
-              <div><span>Dataset</span><strong>{`${data.quality.service} ${data.quality.year}-${String(data.quality.month).padStart(2, "0")}`}</strong></div>
-              <div><span>Validated</span><strong>{formatDateTime(data.quality.validated_at)}</strong></div>
-              <div><span>Total rows</span><strong>{formatNumber(data.quality.total_rows)}</strong></div>
+              <div>
+                <span>Artifact</span>
+                <strong>{data.quality.artifact_name}</strong>
+              </div>
+              <div>
+                <span>Dataset</span>
+                <strong>{`${data.quality.service} ${data.quality.year}-${String(data.quality.month).padStart(2, "0")}`}</strong>
+              </div>
+              <div>
+                <span>Validated</span>
+                <strong>{formatDateTime(data.quality.validated_at)}</strong>
+              </div>
+              <div>
+                <span>Total rows</span>
+                <strong>{formatNumber(data.quality.total_rows)}</strong>
+              </div>
             </div>
           ) : (
             <EmptyState
@@ -100,8 +147,15 @@ export function DataQualityPage({ data, exportUrl }: DataQualityPageProps) {
           <h3>Relation row counts</h3>
           <DataTable
             columns={[
-              { header: "Relation", render: (row: { relation: string; rows: number }) => row.relation },
-              { header: "Rows", align: "right", render: (row: { relation: string; rows: number }) => formatNumber(row.rows) },
+              {
+                header: "Relation",
+                render: (row: { relation: string; rows: number }) => row.relation,
+              },
+              {
+                header: "Rows",
+                align: "right",
+                render: (row: { relation: string; rows: number }) => formatNumber(row.rows),
+              },
             ]}
             emptyTitle="No row counts available"
             getRowKey={(row) => row.relation}
@@ -142,7 +196,10 @@ export function DataQualityPage({ data, exportUrl }: DataQualityPageProps) {
 
       <section className="panel">
         <h3>Local export</h3>
-        <p>Download a bounded CSV from the read-only API. The dashboard does not write back to the API.</p>
+        <p>
+          Download a bounded CSV from the read-only API. The dashboard does not write back to the
+          API.
+        </p>
         <a className="button button--primary" href={exportUrl}>
           Download daily metrics CSV
         </a>

@@ -33,9 +33,21 @@ export function RouteAnalyticsPage({ data }: { data: DashboardData }) {
             { header: "Pickup", render: (row) => row.pickup_zone_name },
             { header: "Dropoff", render: (row) => row.dropoff_zone_name },
             { header: "Trips", align: "right", render: (row) => formatNumber(row.trip_count) },
-            { header: "Distance", align: "right", render: (row) => formatMiles(row.average_trip_distance) },
-            { header: "Duration", align: "right", render: (row) => formatDuration(row.average_duration_minutes) },
-            { header: "Revenue", align: "right", render: (row) => formatCurrency(row.total_revenue) },
+            {
+              header: "Distance",
+              align: "right",
+              render: (row) => formatMiles(row.average_trip_distance),
+            },
+            {
+              header: "Duration",
+              align: "right",
+              render: (row) => formatDuration(row.average_duration_minutes),
+            },
+            {
+              header: "Revenue",
+              align: "right",
+              render: (row) => formatCurrency(row.total_revenue),
+            },
           ]}
           emptyTitle="No route metrics available"
           getRowKey={(row) => `${row.pickup_zone_id}-${row.dropoff_zone_id}`}

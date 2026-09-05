@@ -52,7 +52,10 @@ describe("Urban mobility dashboard", () => {
   });
 
   test("renders API unavailable state when requests fail", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new Error("offline"))));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Promise.reject(new Error("offline"))),
+    );
 
     render(<App />);
 
@@ -86,12 +89,15 @@ describe("Urban mobility dashboard", () => {
 
   test("keeps the dashboard usable when no anomaly rows exist", async () => {
     const fetchMock = createFetchMock();
-    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
-      if (String(input).includes("/anomalies")) {
-        return Response.json({ detail: "No anomalous trips found" }, { status: 404 });
-      }
-      return fetchMock(input);
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).includes("/anomalies")) {
+          return Response.json({ detail: "No anomalous trips found" }, { status: 404 });
+        }
+        return fetchMock(input);
+      }),
+    );
 
     render(<App />);
 
@@ -102,12 +108,15 @@ describe("Urban mobility dashboard", () => {
 
   test("renders a filtered empty state when overview metrics have no rows", async () => {
     const fetchMock = createFetchMock();
-    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
-      if (String(input).includes("/metrics/overview")) {
-        return Response.json({ detail: "No overview metrics found" }, { status: 404 });
-      }
-      return fetchMock(input);
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).includes("/metrics/overview")) {
+          return Response.json({ detail: "No overview metrics found" }, { status: 404 });
+        }
+        return fetchMock(input);
+      }),
+    );
 
     render(<App />);
 
@@ -130,21 +139,24 @@ describe("Urban mobility dashboard", () => {
 
   test("renders rejected-record counts and validation rule evidence", async () => {
     const fetchMock = createFetchMock();
-    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
-      if (String(input).includes("/quality/summary")) {
-        return Response.json({
-          service: "yellow",
-          year: 2026,
-          month: 1,
-          validated_at: "2026-01-03T10:00:00Z",
-          total_rows: 3,
-          status_counts: { valid: 1, warning: 1, rejected: 1 },
-          rule_counts: { duplicate_record: 1, negative_fare_amount: 1 },
-          artifact_name: "validation_2026_01.json",
-        });
-      }
-      return fetchMock(input);
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).includes("/quality/summary")) {
+          return Response.json({
+            service: "yellow",
+            year: 2026,
+            month: 1,
+            validated_at: "2026-01-03T10:00:00Z",
+            total_rows: 3,
+            status_counts: { valid: 1, warning: 1, rejected: 1 },
+            rule_counts: { duplicate_record: 1, negative_fare_amount: 1 },
+            artifact_name: "validation_2026_01.json",
+          });
+        }
+        return fetchMock(input);
+      }),
+    );
 
     render(<App />);
     await userEvent.click(
@@ -158,15 +170,18 @@ describe("Urban mobility dashboard", () => {
 
   test("surfaces an invalid quality artifact without hiding healthy analytics", async () => {
     const fetchMock = createFetchMock();
-    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
-      if (String(input).includes("/quality/summary")) {
-        return Response.json(
-          { detail: "The latest validation summary has inconsistent row counts" },
-          { status: 503 },
-        );
-      }
-      return fetchMock(input);
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).includes("/quality/summary")) {
+          return Response.json(
+            { detail: "The latest validation summary has inconsistent row counts" },
+            { status: 503 },
+          );
+        }
+        return fetchMock(input);
+      }),
+    );
 
     render(<App />);
     await userEvent.click(

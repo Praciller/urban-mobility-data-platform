@@ -151,7 +151,12 @@ export function BarChartPanel<RowT extends object>({
           />
           <Legend wrapperStyle={{ color: "var(--color-text-muted)", fontSize: 12 }} />
           {bars.map((bar) => (
-            <Bar dataKey={String(bar.key)} fill={chartColors[bar.tone]} key={String(bar.key)} name={bar.name} />
+            <Bar
+              dataKey={String(bar.key)}
+              fill={chartColors[bar.tone]}
+              key={String(bar.key)}
+              name={bar.name}
+            />
           ))}
         </BarChart>
       </ResponsiveContainer>

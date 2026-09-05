@@ -61,7 +61,7 @@ flowchart LR
 | Orchestration | Dagster local UI, assets, jobs, stopped schedule |
 | API | FastAPI, Pydantic, Uvicorn |
 | Dashboard | React, Vite, Recharts, Vitest |
-| Quality | pytest, Ruff, pre-commit, GitHub Actions |
+| Quality | pytest, Ruff, ESLint, Prettier, Vitest, Playwright, npm audit, GitHub Actions |
 
 ## Quickstart
 
@@ -124,7 +124,9 @@ The end-to-end demo path is documented in [docs/local_demo.md](docs/local_demo.m
 | `uv run pytest` | Run Python tests |
 | `uv run ruff check .` and `uv run ruff format --check .` | Lint and format check |
 | `uv run python scripts/check_repo_readiness.py` | Check publish-readiness guardrails |
-| `npm test`, `npm run lint`, `npm run build` from `apps/web` | Test, typecheck, and build dashboard |
+| `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build` from `apps/web` | Format, lint, typecheck, unit test, and build dashboard |
+| `npm run e2e:install` and `npm run e2e` from `apps/web` | Install Chromium and run deterministic desktop/mobile browser checks |
+| `npm audit --audit-level=high` from `apps/web` | Check frontend dependencies for high/critical advisories |
 
 GNU Make targets exist for convenience, but PowerShell `uv` and `npm` commands above are the
 supported Windows path.

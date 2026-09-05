@@ -64,6 +64,8 @@ dagster_home/
 .*-local-backup/
 .playwright-cli/
 output/playwright/
+playwright-report/
+test-results/
 docs/superpowers/plans/
 
 # Editors and operating systems

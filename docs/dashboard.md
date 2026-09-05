@@ -47,8 +47,17 @@ anomalies remains reviewable. The quality summary is optional until the first de
 
 ```powershell
 cd apps/web
-npm test
+npm run format:check
 npm run lint
+npm run typecheck
+npm run test
 npm run build
-npm audit --omit=optional
+npm audit --audit-level=high
+npm run e2e:install
+npm run e2e
 ```
+
+`npm run e2e` uses a generated local sample fixture, a temporary DuckDB path, and Playwright
+Chromium projects for desktop and mobile. It exercises health/KPI/page navigation, visible filter
+requests, anomaly and data-quality evidence, API failure/retry recovery, compact navigation, and
+mobile overflow. Traces, screenshots, videos, and the HTML report remain ignored local/CI output.

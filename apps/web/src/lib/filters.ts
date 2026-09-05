@@ -14,14 +14,7 @@ export const defaultFilters: DashboardFilters = {
 };
 
 export interface DashboardPage {
-  id:
-    | "overview"
-    | "demand"
-    | "zones"
-    | "routes"
-    | "revenue"
-    | "anomalies"
-    | "quality";
+  id: "overview" | "demand" | "zones" | "routes" | "revenue" | "anomalies" | "quality";
   label: string;
 }
 
