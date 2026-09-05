@@ -236,7 +236,7 @@ Phase B deploys canonical `main` and verifies both services.
 
 - Blueprint: `render.yaml`
 - Hosted API image: `deploy/render/Dockerfile.api`
-- Hosted CORS: configure `CORS_ALLOWED_ORIGINS` from the exact dashboard origin; local defaults remain unchanged.
+- Hosted CORS: configure the `sync: false` `CORS_ALLOWED_ORIGINS` value from the exact dashboard origin; local defaults remain unchanged. Phase A intentionally avoids a two-way Blueprint service reference.
 - Phase A status: deployment readiness only, not deployed production evidence.
 
 - Yellow Taxi only.

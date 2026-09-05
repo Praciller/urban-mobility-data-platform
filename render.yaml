@@ -9,10 +9,7 @@ services:
     autoDeployTrigger: checksPass
     envVars:
       - key: CORS_ALLOWED_ORIGINS
-        fromService:
-          type: web
-          name: praciller-urban-mobility-dashboard
-          envVarKey: RENDER_EXTERNAL_URL
+        sync: false
 
   - type: web
     name: praciller-urban-mobility-dashboard

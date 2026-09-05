@@ -11,3 +11,12 @@ def test_configured_origins_are_exact_and_conservative() -> None:
         "https://dashboard.example"
     ]
     assert get_allowed_origins("*, https://ok.example/path, not-an-origin") == []
+
+
+def test_malformed_origins_are_ignored_without_broadening_access() -> None:
+    assert (
+        get_allowed_origins(
+            "https://user:password@example.com, https://example.com:invalid, https://[::1"
+        )
+        == []
+    )
