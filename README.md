@@ -12,7 +12,7 @@ consumption, and reproducible local operations.
 
 **Signal:** Validated mobility ingestion with DuckDB/dbt marts, orchestration, quality checks, and a read-only analytics API.
 
-[Repository](https://github.com/Praciller/urban-mobility-data-platform) · [Dream Logs case study](https://dreamlogsdata.com/en/projects/urban-mobility-data-platform)
+[Live dashboard](https://praciller-urban-mobility-dashboard.onrender.com) · [API](https://praciller-urban-mobility-api.onrender.com) · [OpenAPI](https://praciller-urban-mobility-api.onrender.com/openapi.json) · [Repository](https://github.com/Praciller/urban-mobility-data-platform) · [Dream Logs case study](https://dreamlogsdata.com/en/projects/urban-mobility-data-platform)
 
 **What this demonstrates:** bounded ingestion and rejection paths · dimensional data modeling · local orchestration with API-ready serving.
 
@@ -134,10 +134,15 @@ supported Windows path.
 
 ## API And Dashboard
 
-FastAPI is read-only over persisted DuckDB marts. OpenAPI is available at:
+FastAPI is read-only over persisted DuckDB marts. Local OpenAPI is available at:
 
 - `http://127.0.0.1:8000/docs`
 - `http://127.0.0.1:8000/openapi.json`
+
+Verified hosted API surfaces:
+
+- https://praciller-urban-mobility-api.onrender.com/docs
+- https://praciller-urban-mobility-api.onrender.com/openapi.json
 
 The API also exposes `/quality/summary`, a sanitized view of the latest bounded validation
 artifact. It reports valid, warning, and rejected row counts plus rule-level evidence without
@@ -194,6 +199,7 @@ Keep screenshots small and avoid generated raw data or database files.
 - [Dashboard](docs/dashboard.md)
 - [Dagster](docs/dagster.md)
 - [Operations](docs/operations.md)
+- [Hosted demo](docs/hosted_demo.md)
 - [Local demo](docs/local_demo.md)
 - [Portfolio review](docs/portfolio_review.md)
 - [Troubleshooting](docs/troubleshooting.md)
@@ -220,27 +226,29 @@ cd apps/web
 npm run build
 ```
 
-## Phase A hosted demo readiness
+## Hosted portfolio demo
 
-Phase A prepares, but does not deploy, a free Render portfolio-demo shape:
-the React/Vite dashboard is a static site and the FastAPI service is a Docker
-web service containing a deterministic 1,000-row 2026-01 yellow-taxi sample.
-The sample is generated during image build from the existing offline fixture
-flow; it is not live or realtime. Render free services can spin down when
-idle, and their runtime filesystem is disposable, so the API image treats the
-bundled DuckDB snapshot as immutable and requires no persistent disk. Dagster
-remains local-only. Final public URLs are intentionally not documented until
-Phase B deploys canonical `main` and verifies both services.
+A public sample-backed portfolio demo is deployed on Render from canonical
+`main` revision `9fb8c96f3684e4a98d133eb064b14b67a456074c`. The React/Vite dashboard is a
+free static site and the FastAPI API is a free Docker web service in Singapore.
+The API image generates and bundles the deterministic three-row 2026-01 yellow
+taxi fixture during image build; Dagster remains local-only and no persistent
+disk or hosted database is required.
 
+- Dashboard: https://praciller-urban-mobility-dashboard.onrender.com
+- API: https://praciller-urban-mobility-api.onrender.com
+- OpenAPI: https://praciller-urban-mobility-api.onrender.com/openapi.json
 - Blueprint: `render.yaml`
 - Hosted API image: `deploy/render/Dockerfile.api`
-- Hosted CORS: configure the `sync: false` `CORS_ALLOWED_ORIGINS` value from the exact dashboard origin; local defaults remain unchanged. Phase A intentionally avoids a two-way Blueprint service reference.
-- Phase A status: deployment readiness only, not deployed production evidence.
+- Boundary: portfolio demo only; not live, realtime, always-on, or a production SLA.
+- Free-tier note: Render services may spin down after inactivity, so the first request can take longer while the service wakes.
+
+See [docs/hosted_demo.md](docs/hosted_demo.md) for the verified deployment record.
 
 ## Limitations
 
 - Yellow Taxi only.
-- No production deployment is configured.
+- A public sample-backed Render portfolio demo is deployed; no production SLA or realtime service is configured.
 - Dagster schedule is stopped by default and local/demo only.
 - The offline demo fixture is intentionally tiny and is not representative of full NYC TLC volume.
 - Optional official sample materialization requires network access and DuckDB `httpfs`.

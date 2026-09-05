@@ -209,24 +209,21 @@ docker compose up --build
 Invoke-RestMethod http://127.0.0.1:8000/health
 ```
 
-### Phase A Render readiness
+### Hosted Render portfolio demo
 
-The repository includes a deployment-specific Render Blueprint and API image:
-`render.yaml` defines a free Singapore API Docker service and free static
-dashboard, while `deploy/render/Dockerfile.api` generates the bounded
-2026-01 yellow sample at image build time. The runtime image contains the
-DuckDB snapshot and does not run dbt or require a persistent disk. Dagster is
-not hosted. Free Render services may spin down after inactivity and have
-ephemeral runtime storage; this is suitable for a portfolio demo, not a
-production SLA or realtime system.
+The verified public portfolio demo uses the repository Blueprint and dedicated
+API image. Render is configured with a free Docker API in Singapore and a free
+static dashboard; no hosted database or persistent disk is required.
 
-Phase A intentionally does not contain public service URLs or perform a
-deployment. The Blueprint wires the dashboard's `VITE_API_BASE_URL` from the
-API service's `RENDER_EXTERNAL_URL`, but leaves API `CORS_ALLOWED_ORIGINS` as
-`sync: false`. This avoids a circular two-way service reference before either
-service has a final URL. Phase B must deploy the reviewed canonical `main`, set
-and verify the exact dashboard origin in `CORS_ALLOWED_ORIGINS`, and record the
-real URLs.
+- Dashboard: https://praciller-urban-mobility-dashboard.onrender.com
+- API: https://praciller-urban-mobility-api.onrender.com
+- OpenAPI: https://praciller-urban-mobility-api.onrender.com/openapi.json
+- Source GitHub SHA: `9fb8c96f3684e4a98d133eb064b14b67a456074c`
+- API service ID: `srv-dae4a6n40ujc73dopd50`
+- Dashboard service ID: `srv-dae4b5740ujc73dot7ag`
+- Exact hosted CORS origin: `https://praciller-urban-mobility-dashboard.onrender.com`
+- Clear-cache API rebuild proof: `dep-dae4f967bikc7382405g`, source `9fb8c96f3684e4a98d133eb064b14b67a456074c`
+- Free-tier limitation: services can sleep after inactivity; no always-on or production-SLA claim.
 
 ## Troubleshooting
 
