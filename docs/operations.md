@@ -199,7 +199,17 @@ The local monthly schedule is stopped by default. It is for demos only.
 
 ## Docker
 
-## Phase A Render readiness
+The default image starts FastAPI and expects a populated DuckDB database mounted at
+`/data/processed/urban_mobility.duckdb`. Compose bind-mounts `DATA_DIR` to `/data`, so run the
+offline demo against the same `DATA_DIR` before starting the container.
+
+```powershell
+docker compose config
+docker compose up --build
+Invoke-RestMethod http://127.0.0.1:8000/health
+```
+
+### Phase A Render readiness
 
 The repository includes a deployment-specific Render Blueprint and API image:
 `render.yaml` defines a free Singapore API Docker service and free static
@@ -217,16 +227,6 @@ API service's `RENDER_EXTERNAL_URL`, but leaves API `CORS_ALLOWED_ORIGINS` as
 service has a final URL. Phase B must deploy the reviewed canonical `main`, set
 and verify the exact dashboard origin in `CORS_ALLOWED_ORIGINS`, and record the
 real URLs.
-
-The default image starts FastAPI and expects a populated DuckDB database mounted at
-`/data/processed/urban_mobility.duckdb`. Compose bind-mounts `DATA_DIR` to `/data`, so run the
-offline demo against the same `DATA_DIR` before starting the container.
-
-```powershell
-docker compose config
-docker compose up --build
-Invoke-RestMethod http://127.0.0.1:8000/health
-```
 
 ## Troubleshooting
 

@@ -220,9 +220,7 @@ cd apps/web
 npm run build
 ```
 
-## Limitations
-
-### Phase A hosted demo readiness
+## Phase A hosted demo readiness
 
 Phase A prepares, but does not deploy, a free Render portfolio-demo shape:
 the React/Vite dashboard is a static site and the FastAPI service is a Docker
@@ -238,6 +236,8 @@ Phase B deploys canonical `main` and verifies both services.
 - Hosted API image: `deploy/render/Dockerfile.api`
 - Hosted CORS: configure the `sync: false` `CORS_ALLOWED_ORIGINS` value from the exact dashboard origin; local defaults remain unchanged. Phase A intentionally avoids a two-way Blueprint service reference.
 - Phase A status: deployment readiness only, not deployed production evidence.
+
+## Limitations
 
 - Yellow Taxi only.
 - No production deployment is configured.
