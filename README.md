@@ -238,7 +238,7 @@ npm run build
 
 The free Render portfolio-demo shape is deployed from canonical `main`:
 the React/Vite dashboard is a static site and the FastAPI service is a Docker
-web service containing a deterministic 1,000-row 2026-01 yellow-taxi sample.
+web service containing the deterministic three-row 2026-01 Yellow Taxi fixture.
 The sample is generated during image build from the existing offline fixture
 flow; it is not live or realtime. Render free services can spin down when
 idle, and their runtime filesystem is disposable, so the API image treats the
