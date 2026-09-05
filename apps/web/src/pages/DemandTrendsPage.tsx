@@ -7,7 +7,6 @@ export function DemandTrendsPage({ data }: { data: DashboardData }) {
   return (
     <div className="page-stack">
       <section className="page-heading">
-        <p className="eyebrow">Demand</p>
         <h2>Demand Trends</h2>
         <p>Daily and hourly demand slices from dbt mart aggregates.</p>
       </section>
@@ -19,8 +18,8 @@ export function DemandTrendsPage({ data }: { data: DashboardData }) {
             data={data.daily.items}
             emptyTitle="No daily metrics available"
             lines={[
-              { key: "trip_count", name: "Trips", color: "#2563eb" },
-              { key: "passenger_count", name: "Passengers", color: "#7c3aed" },
+              { key: "trip_count", name: "Trips", tone: "primary" },
+              { key: "passenger_count", name: "Passengers", tone: "secondary" },
             ]}
             xKey="pickup_date"
           />
@@ -29,7 +28,7 @@ export function DemandTrendsPage({ data }: { data: DashboardData }) {
         <article className="panel">
           <h3>Revenue by day</h3>
           <BarChartPanel
-            bars={[{ key: "total_revenue", name: "Revenue", color: "#f59e0b" }]}
+            bars={[{ key: "total_revenue", name: "Revenue", tone: "accent" }]}
             data={data.daily.items}
             emptyTitle="No revenue trend metrics available"
             xKey="pickup_date"

@@ -10,7 +10,6 @@ export function ZoneAnalyticsPage({ data }: { data: DashboardData }) {
   return (
     <div className="page-stack">
       <section className="page-heading">
-        <p className="eyebrow">Zones</p>
         <h2>Zone Analytics</h2>
         <p>
           Pickup demand and local zone summary from <code>/zones</code> and{" "}
@@ -33,7 +32,7 @@ export function ZoneAnalyticsPage({ data }: { data: DashboardData }) {
         <article className="panel panel--wide">
           <h3>Top pickup zones</h3>
           <BarChartPanel
-            bars={[{ key: "pickup_trip_count", name: "Pickups", color: "#2563eb" }]}
+            bars={[{ key: "pickup_trip_count", name: "Pickups", tone: "primary" }]}
             data={data.zones.items.map((zone) => ({ ...zone, label: `${zone.zone_id}: ${zone.zone_name}` }))}
             emptyTitle="No zone metrics available"
             xKey="label"

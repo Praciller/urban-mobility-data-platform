@@ -22,14 +22,13 @@ export function DataQualityPage({ data, exportUrl }: DataQualityPageProps) {
   return (
     <div className="page-stack">
       <section className="page-heading">
-        <p className="eyebrow">Pipeline status</p>
         <h2>Data Quality / Pipeline Status</h2>
         <p>Local DuckDB health, mart availability, and row counts from `/health` and `/metadata`.</p>
       </section>
 
       <section className="stat-grid">
         <StatCard label="API status" value={data.health.status} detail={data.health.duckdb_available ? "DuckDB available" : "DuckDB unavailable"} />
-        <StatCard label="Data freshness" value={formatDateTime(data.health.data_freshness)} />
+        <StatCard label="Data freshness" value={formatDateTime(data.health.data_freshness)} valueSize="compact" />
         <StatCard label="Available marts" value={formatNumber(data.health.available_marts.length)} />
         <StatCard label="Missing marts" tone={data.health.missing_marts.length > 0 ? "warning" : "success"} value={formatNumber(data.health.missing_marts.length)} />
         <StatCard label="Rejected rows" tone={data.quality?.status_counts.rejected ? "warning" : "success"} value={formatNumber(data.quality?.status_counts.rejected)} />

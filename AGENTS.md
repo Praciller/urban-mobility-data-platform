@@ -82,3 +82,17 @@ npm --prefix apps/web run build
 - PR descriptions must state scope, out-of-scope items, verification evidence, and any contract/data/UI impact.
 - For architecture or durable workflow decisions, add or supersede an ADR instead of leaving rationale only in chat or a PR comment.
 - A reviewer should be able to reproduce the claimed result from repository commands; if not, classify the result as a limitation rather than a pass.
+
+## Agent skills
+
+### Issue tracker
+
+Issues for this repo live in GitHub Issues and are accessed with `gh`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the default Matt Pocock triage label vocabulary. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This is a single-context repository using the root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.

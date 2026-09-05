@@ -12,7 +12,6 @@ export function RouteAnalyticsPage({ data }: { data: DashboardData }) {
   return (
     <div className="page-stack">
       <section className="page-heading">
-        <p className="eyebrow">Routes</p>
         <h2>Route Analytics</h2>
         <p>Highest-volume origin and destination pairs from the local route mart.</p>
       </section>
@@ -20,7 +19,7 @@ export function RouteAnalyticsPage({ data }: { data: DashboardData }) {
       <section className="panel panel--wide">
         <h3>Top route volume</h3>
         <BarChartPanel
-          bars={[{ key: "trip_count", name: "Trips", color: "#7c3aed" }]}
+          bars={[{ key: "trip_count", name: "Trips", tone: "primary" }]}
           data={routeRows}
           emptyTitle="No route metrics available"
           xKey="route_label"

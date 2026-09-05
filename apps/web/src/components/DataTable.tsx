@@ -24,33 +24,46 @@ export function DataTable<RowT>({
   emptyDetail,
 }: DataTableProps<RowT>) {
   if (rows.length === 0) {
-    return <EmptyState title={emptyTitle} detail={emptyDetail} />;
+    return (
+      <div className="table-region table-region--empty">
+        <EmptyState title={emptyTitle} detail={emptyDetail} />
+      </div>
+    );
   }
 
   return (
-    <div className="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            {columns.map((column) => (
-              <th className={column.align === "right" ? "align-right" : undefined} key={column.header}>
-                {column.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={getRowKey(row)}>
+    <div className="table-region">
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
               {columns.map((column) => (
-                <td className={column.align === "right" ? "align-right" : undefined} key={column.header}>
-                  {column.render(row)}
-                </td>
+                <th
+                  className={column.align === "right" ? "table-cell--numeric" : undefined}
+                  key={column.header}
+                  scope="col"
+                >
+                  {column.header}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={getRowKey(row)}>
+                {columns.map((column) => (
+                  <td
+                    className={column.align === "right" ? "table-cell--numeric" : undefined}
+                    key={column.header}
+                  >
+                    {column.render(row)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
