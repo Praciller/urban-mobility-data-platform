@@ -9,10 +9,12 @@ For newer evidence (2026-10-22, Draft PR #24), see
 [bounded real-source validation](real_data_smoke_2026-10-22.md) and
 [security review](security_review_2026-10-22.md),
 [publication protocol](validation_publication.md), and
-[synthetic benchmark](synthetic_benchmark_2026-10-22.md). The earlier branch was
-locally verified with 84 Python tests, 13 frontend unit tests, 12 Storybook
-tests, and 9 passing Playwright cases (1 skip); all 10 GitHub CI jobs
-passed. The following June snapshot is historical.
+[synthetic benchmark](synthetic_benchmark_2026-10-22.md). The latest local
+correctness tests on the Draft PR branch passed **97 Python tests**, Ruff lint
+and format, repository readiness/guardrails, and **9 Playwright browser tests**
+(1 skip). The 10 GitHub CI jobs previously passed on commit `cd529f58`;
+check current PR-head CI status independently before merging.
+The following June snapshot is historical.
 
 The full baseline was verified locally on 2026-06-20 before the latest quality/API gap closure.
 This section records historical pre-deduplication measurements; the current

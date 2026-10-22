@@ -176,3 +176,66 @@ def test_incomplete_active_snapshot_does_not_fall_back_to_legacy(tmp_path: Path)
     (version / "summary.json").unlink()
     with pytest.raises(PublicationError):
         validator.validation_summary_path(tmp_path, 2026, 1)
+
+
+def test_exclusive_partition_lock_survives_process_death(tmp_path: Path) -> None:
+    import subprocess
+    import sys
+
+    from urban_mobility.validation_store import partition_write_lock
+
+    child_code = (
+        "import sys\n"
+        "from pathlib import Path\n"
+        "from urban_mobility.validation_store import partition_write_lock\n"
+        "with partition_write_lock(Path(sys.argv[1]), 2026, 1, 'yellow'):\n"
+        "    print('LOCKED', flush=True)\n"
+        "    sys.stdin.readline()\n"
+    )
+    child = subprocess.Popen(
+        [sys.executable, "-c", child_code, str(tmp_path)],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        assert child.stdout is not None
+        assert child.stdout.readline().strip() == "LOCKED"
+        with (
+            pytest.raises(PublicationError, match="Concurrent validation publisher"),
+            partition_write_lock(tmp_path, 2026, 1, "yellow"),
+        ):
+            pytest.fail("Lock should exclude another publisher")
+        child.kill()  # The OS should release the region lock on termination.
+        child.wait(timeout=10)
+        # Windows can release a terminated process's region lock slightly later.
+        import time
+
+        deadline = time.monotonic() + 3
+        while True:
+            try:
+                with partition_write_lock(tmp_path, 2026, 1, "yellow"):
+                    break
+            except PublicationError:
+                if time.monotonic() >= deadline:
+                    pytest.fail("Lock was not released after the publisher terminated")
+                time.sleep(0.1)
+        assert (partition_root(tmp_path, 2026, 1, "yellow") / "publication.lock").exists()
+    finally:
+        if child.poll() is None:
+            child.kill()
+            child.wait(timeout=10)
+        for stream in (child.stdin, child.stdout, child.stderr):
+            if stream is not None:
+                stream.close()
+
+
+def test_partition_locks_are_independent(tmp_path: Path) -> None:
+    from urban_mobility.validation_store import partition_write_lock
+
+    with (
+        partition_write_lock(tmp_path, 2026, 1, "yellow"),
+        partition_write_lock(tmp_path, 2026, 2, "yellow"),
+    ):
+        pass

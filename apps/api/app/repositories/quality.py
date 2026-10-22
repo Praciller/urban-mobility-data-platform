@@ -27,6 +27,7 @@ class QualityReportRepository:
             )
         ]
         pointers = self.data_dir / "processed" / "publications"
+        active_names: set[str] = set()
         for pointer in pointers.glob("service=*/year=*/month=*/current.json"):
             try:
                 service = pointer.parents[2].name.removeprefix("service=")
@@ -37,7 +38,16 @@ class QualityReportRepository:
                     raise PublicationError("Active snapshot disappeared")
             except (ValueError, PublicationError) as error:
                 raise DataUnavailableError("An active validation publication is invalid") from error
-            candidates.append((version / "summary.json", f"validation_{year}_{month:02d}.json"))
+            artifact_name = f"validation_{year}_{month:02d}.json"
+            active_names.add(artifact_name)
+            candidates.append((version / "summary.json", artifact_name))
+        # An activated month supersedes its old flat report regardless of
+        # timestamps (e.g. machine clock skew or a restored older revision).
+        candidates = [
+            (path, name)
+            for path, name in candidates
+            if path.parent != self.reports_dir or name not in active_names
+        ]
         if not candidates:
             raise ResourceNotFoundError("No validation summary is available")
 

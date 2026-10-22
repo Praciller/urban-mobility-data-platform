@@ -10,6 +10,8 @@ import json
 import os
 import re
 import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from uuid import uuid4
 
@@ -34,6 +36,44 @@ def partition_root(data_dir: Path, year: int, month: int, service: str) -> Path:
         / f"year={year:04d}"
         / f"month={month:02d}"
     )
+
+
+@contextmanager
+def partition_write_lock(data_dir: Path, year: int, month: int, service: str) -> Iterator[None]:
+    """Reject concurrent publishers; automatically release the OS lock on crash.
+
+    The lock file is intentionally never deleted. Unlinking it could allow two
+    writers to lock different inodes for the same partition on POSIX systems.
+    """
+    root = partition_root(data_dir, year, month, service)
+    root.mkdir(parents=True, exist_ok=True)
+    lock_path = root / "publication.lock"
+    with lock_path.open("a+b") as stream:
+        locked = False
+        try:
+            if os.name == "nt":
+                import msvcrt
+
+                stream.seek(0)
+                msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+
+                fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            locked = True
+        except OSError as error:
+            raise PublicationError(
+                f"Concurrent validation publisher for {service} {year}-{month:02d}"
+            ) from error
+        try:
+            yield
+        finally:
+            if locked:
+                if os.name == "nt":
+                    stream.seek(0)
+                    msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+                else:
+                    fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
 
 
 def allocate_version(data_dir: Path, year: int, month: int, service: str) -> Path:

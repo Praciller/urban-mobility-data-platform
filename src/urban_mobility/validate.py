@@ -19,6 +19,7 @@ from urban_mobility.validation_store import (
     activate_version,
     allocate_version,
     current_version,
+    partition_write_lock,
 )
 
 MAX_TRIP_DURATION_MINUTES = 24 * 60
@@ -108,58 +109,61 @@ def validate_trip_data(
     columns = pq.read_schema(source).names
     zone_ids = _load_zone_ids(zones)
 
-    # Each run is immutable. Only the single atomic manifest pointer decides
-    # which three artifacts are visible to readers; an interrupted run cannot
-    # publish a partially written snapshot.
-    version = allocate_version(resolved_data_dir, year, month, service)
-    validated = version / "validated.parquet"
-    rejected = version / "rejected.parquet"
-    summary_path = version / "summary.json"
-    ingested_at = datetime.now(UTC).replace(tzinfo=None, microsecond=0)
-    try:
-        with duckdb.connect() as connection:
-            connection.execute("create temp table valid_zone_ids (location_id integer primary key)")
-            connection.executemany(
-                "insert into valid_zone_ids values (?)",
-                [(zone_id,) for zone_id in sorted(zone_ids)],
-            )
-            connection.execute(
-                _classification_sql(
+    with partition_write_lock(resolved_data_dir, year, month, service):
+        # Each run is immutable. Only the single atomic manifest pointer decides
+        # which three artifacts are visible to readers; an interrupted run cannot
+        # publish a partially written snapshot.
+        version = allocate_version(resolved_data_dir, year, month, service)
+        validated = version / "validated.parquet"
+        rejected = version / "rejected.parquet"
+        summary_path = version / "summary.json"
+        ingested_at = datetime.now(UTC).replace(tzinfo=None, microsecond=0)
+        try:
+            with duckdb.connect() as connection:
+                connection.execute(
+                    "create temp table valid_zone_ids (location_id integer primary key)"
+                )
+                connection.executemany(
+                    "insert into valid_zone_ids values (?)",
+                    [(zone_id,) for zone_id in sorted(zone_ids)],
+                )
+                connection.execute(
+                    _classification_sql(
+                        source=source,
+                        source_columns=columns,
+                        year=year,
+                        month=month,
+                        service=service,
+                        ingested_at=ingested_at,
+                    )
+                )
+                _copy_classification(connection, validated, "quality_status <> 'rejected'")
+                _copy_classification(connection, rejected, "quality_status = 'rejected'")
+                summary = _build_summary(
+                    connection=connection,
                     source=source,
-                    source_columns=columns,
+                    validated=validated,
+                    rejected=rejected,
                     year=year,
                     month=month,
                     service=service,
-                    ingested_at=ingested_at,
+                    validated_at=ingested_at,
                 )
-            )
-            _copy_classification(connection, validated, "quality_status <> 'rejected'")
-            _copy_classification(connection, rejected, "quality_status = 'rejected'")
-            summary = _build_summary(
-                connection=connection,
-                source=source,
-                validated=validated,
-                rejected=rejected,
-                year=year,
-                month=month,
-                service=service,
-                validated_at=ingested_at,
-            )
-        _write_json(summary_path, summary)
-        activate_version(resolved_data_dir, year, month, service, version)
-    except Exception:
-        # Before the pointer update, this run is invisible and can be cleaned.
-        # Never delete a run that is already current, even if a post-commit
-        # cleanup operation or another exception fails.
-        if current_version(resolved_data_dir, year, month, service) != version:
-            shutil.rmtree(version)
-        raise
-    return ValidationResult(
-        summary_path=summary_path,
-        validated_path=validated,
-        rejected_path=rejected,
-        summary=summary,
-    )
+            _write_json(summary_path, summary)
+            activate_version(resolved_data_dir, year, month, service, version)
+        except Exception:
+            # Before the pointer update, this run is invisible and can be cleaned.
+            # Never delete a run that is already current, even if a post-commit
+            # cleanup operation or another exception fails.
+            if current_version(resolved_data_dir, year, month, service) != version:
+                shutil.rmtree(version)
+            raise
+        return ValidationResult(
+            summary_path=summary_path,
+            validated_path=validated,
+            rejected_path=rejected,
+            summary=summary,
+        )
 
 
 def _validate_inputs(source: Path, zones: Path) -> None:
