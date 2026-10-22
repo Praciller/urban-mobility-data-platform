@@ -17,6 +17,7 @@ consumption, and reproducible local operations.
 **What this demonstrates:** bounded ingestion and rejection paths · dimensional data modeling · local orchestration with API-ready serving.
 
 **Boundary:** the default demo uses a tiny generated fixture; it is not a live or real-time NYC transport service.
+Duplicate source-row occurrences are preserved in staging and anomaly evidence but excluded from curated fact metrics.
 
 ## Verified hosted demo
 
@@ -87,7 +88,7 @@ $env:DUCKDB_PATH = "$env:DATA_DIR/processed/urban_mobility.duckdb"
 $env:DAGSTER_HOME = "$PWD/.dagster"
 
 uv sync --locked --all-groups
-npm install --prefix apps/web
+npm ci --prefix apps/web
 
 uv run python scripts/run_demo.py --data-dir $env:DATA_DIR --year 2026 --month 1 --service yellow --sample-rows 1000
 ```
@@ -128,7 +129,7 @@ The end-to-end demo path is documented in [docs/local_demo.md](docs/local_demo.m
 | `uv run python scripts/create_demo_fixture.py --year 2026 --month 1 --service yellow --sample-rows 1000` | Create tiny offline demo data under `DATA_DIR` |
 | `uv run python -m urban_mobility.download --year 2026 --month 1 --service yellow --sample-rows 1000` | Optional bounded official sample materialization |
 | `uv run python -m urban_mobility.ingest inspect --year 2026 --month 1 --service yellow --mode sample --sample-rows 1000` | Write raw profile JSON |
-| `uv run python -m urban_mobility.validate --year 2026 --month 1 --service yellow` | Write validated/rejected Parquet and validation summary |
+| `uv run python -m urban_mobility.validate --year 2026 --month 1 --service yellow --mode sample` | Write validated/rejected Parquet and validation summary |
 | `uv run python -m urban_mobility.load_duckdb --year 2026 --month 1 --service yellow` | Idempotently replace one service/month in DuckDB staging |
 | `uv run dbt run --project-dir dbt --profiles-dir dbt` | Build dbt models |
 | `uv run dbt test --project-dir dbt --profiles-dir dbt` | Run dbt quality tests |

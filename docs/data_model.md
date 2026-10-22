@@ -46,7 +46,7 @@ flowchart LR
 | `dim_hour` | Pickup hour dimension |
 | `dim_payment_type` | Payment type labels |
 | `dim_rate_code` | Rate code labels |
-| `fct_trips` | One row per loadable source-row occurrence |
+| `fct_trips` | One row per distinct loadable trip; duplicate warnings remain in staging |
 | `mart_daily_trip_metrics` | Daily trip, passenger, distance, revenue, duration metrics |
 | `mart_hourly_demand` | Demand by pickup date and hour |
 | `mart_zone_demand` | Pickup zone demand and revenue |
@@ -59,7 +59,9 @@ flowchart LR
 - `stable_record_hash` identifies equivalent source records.
 - `trip_id` appends a deterministic occurrence suffix to keep duplicate warnings traceable.
 - Rejected rows are not loaded into `fct_trips`.
-- Warning rows remain loadable so analysts can inspect anomalies without hiding them.
+- Duplicate warnings remain in staging and `mart_anomalous_trips`, but are excluded
+  from `fct_trips` and aggregate KPIs to prevent double-counting.
+- Other warning rows remain loadable so analysts can inspect anomalies without hiding them.
 - dbt tests cover not-null, uniqueness, accepted values, relationships, non-negative amounts, trip
   duration, and reasonable speed.
 

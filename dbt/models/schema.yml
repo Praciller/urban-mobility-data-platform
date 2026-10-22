@@ -72,7 +72,7 @@ models:
     description: One row per classified, loadable Yellow Taxi trip.
     columns:
       - name: trip_id
-        description: Primary key for a physical source-row occurrence.
+        description: Primary key for a distinct curated trip; duplicate occurrences remain in staging.
         data_tests:
           - not_null
           - unique

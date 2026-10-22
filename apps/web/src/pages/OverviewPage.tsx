@@ -12,7 +12,7 @@ import {
 } from "../lib/format";
 
 export function OverviewPage({ data }: { data: DashboardData }) {
-  const { overview, daily, hourly, metadata } = data;
+  const { overview, dailyTrend, hourly, metadata } = data;
 
   return (
     <div className="page-stack">
@@ -81,7 +81,7 @@ export function OverviewPage({ data }: { data: DashboardData }) {
                 </div>
               </div>
               <LineChartPanel
-                data={daily.items}
+                data={dailyTrend}
                 emptyTitle="No daily metrics available"
                 lines={[
                   { key: "trip_count", name: "Trips", tone: "primary" },

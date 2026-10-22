@@ -176,15 +176,17 @@ def resolve_trip_path(
     elif sample_directory.exists():
         candidates.extend(sorted(sample_directory.glob(f"{service}_tripdata_*_sample_*.parquet")))
 
+    # Prefer the full source in auto mode so a stale demo fixture never
+    # silently shadows a real monthly Parquet file.
+    if mode in {"auto", "raw"} and raw.is_file():
+        return raw
+
     if mode in {"auto", "sample"}:
         for candidate in candidates:
             if candidate.is_file():
                 return candidate
         if mode == "sample":
             raise ProfileError(f"No sample Parquet found for {service} {year:04d}-{month:02d}")
-
-    if mode in {"auto", "raw"} and raw.is_file():
-        return raw
 
     raise ProfileError(f"No Parquet found for {service} {year:04d}-{month:02d} under {data_dir}")
 

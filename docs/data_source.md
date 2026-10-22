@@ -56,12 +56,13 @@ external `DATA_DIR/sample`. Remote sample creation may need DuckDB `httpfs` on f
 ## Validation
 
 Validation checks required timestamps, amounts, passenger counts, trip duration, zones,
-duplicates, and reasonable speed. Duplicate occurrences remain loadable with `warning` status;
-impossible rows are written to rejected output.
+duplicates, and reasonable speed. Duplicate occurrences remain in validated staging with
+`warning` status and appear in Anomaly Explorer, but are excluded from curated trip
+counts and revenue. Impossible rows are written to rejected output.
 
 ```powershell
 uv run python -m urban_mobility.ingest inspect --year 2026 --month 1 --service yellow --mode sample --sample-rows 1000
-uv run python -m urban_mobility.validate --year 2026 --month 1 --service yellow
+uv run python -m urban_mobility.validate --year 2026 --month 1 --service yellow --mode sample
 ```
 
 Downloads and fixture outputs are local files. CI uses generated temporary fixtures and never calls

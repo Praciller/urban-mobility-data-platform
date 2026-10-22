@@ -152,6 +152,7 @@ export interface DashboardData {
   qualityError: string | null;
   overview: OverviewMetrics;
   daily: DailyMetricsResponse;
+  dailyTrend: DailyMetric[];
   hourly: HourlyDemandResponse;
   revenue: RevenueMetricsResponse;
   zones: ZonesResponse;

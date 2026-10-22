@@ -221,6 +221,7 @@ export const dashboardFixture: DashboardData = {
   qualityError: null,
   overview,
   daily,
+  dailyTrend: daily.items,
   hourly,
   revenue,
   zones,

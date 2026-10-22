@@ -2,6 +2,7 @@ import type {
   AnomaliesResponse,
   DashboardData,
   DailyMetricsResponse,
+  DailyMetric,
   HealthResponse,
   HourlyDemandResponse,
   MetadataResponse,
@@ -83,6 +84,7 @@ export async function fetchDashboardData(
     qualityResult,
     overview,
     daily,
+    dailyTrend,
     hourly,
     revenue,
     zones,
@@ -99,6 +101,7 @@ export async function fetchDashboardData(
       limit,
       signal,
     ),
+    fetchDailyTrend(common, signal),
     requestPageOrEmpty<HourlyDemandResponse>(
       "/metrics/hourly-demand",
       { limit: Math.max(24, limit), ...common, sort_by: "pickup_hour", sort_order: "asc" },
@@ -138,12 +141,42 @@ export async function fetchDashboardData(
     qualityError: qualityResult.error,
     overview,
     daily,
+    dailyTrend,
     hourly,
     revenue,
     zones,
     routes,
     anomalies,
   };
+}
+
+// Charts fetch the full selected date range independently of the visible table limit.
+// The API limits each page to 500 rows; stop explicitly rather than silently
+// truncating a chart if a request exceeds the supported display budget.
+export async function fetchDailyTrend(
+  params: QueryParams,
+  signal?: AbortSignal,
+): Promise<DailyMetric[]> {
+  const rows: DailyMetric[] = [];
+  const pageSize = 500;
+  const maximumDays = 5000;
+
+  for (let offset = 0; ; offset += pageSize) {
+    if (offset >= maximumDays) {
+      throw new ApiError(
+        "Date range too large for daily trends; narrow the filters",
+        "/metrics/daily",
+      );
+    }
+    const page = await requestPageOrEmpty<DailyMetricsResponse>(
+      "/metrics/daily",
+      { ...params, limit: pageSize, offset, sort_by: "pickup_date", sort_order: "asc" },
+      pageSize,
+      signal,
+    );
+    rows.push(...page.items);
+    if (rows.length >= page.total || page.items.length === 0) return rows;
+  }
 }
 
 async function requestQualitySummary(

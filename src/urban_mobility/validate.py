@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import shutil
+import tempfile
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -78,6 +80,7 @@ def validate_trip_data(
     service: str,
     data_dir: Path | None = None,
     input_path: Path | None = None,
+    mode: str = "auto",
 ) -> ValidationResult:
     """Validate a Yellow Taxi Parquet file and write classified outputs."""
     validate_trip_request(year, month, service)
@@ -85,7 +88,7 @@ def validate_trip_data(
     source = (
         input_path.expanduser().resolve()
         if input_path
-        else resolve_trip_path(resolved_data_dir, year, month, service)
+        else resolve_trip_path(resolved_data_dir, year, month, service, mode=mode)
     )
     zones = zone_lookup_path(resolved_data_dir)
     _validate_inputs(source, zones)
@@ -98,40 +101,53 @@ def validate_trip_data(
     for output in (validated, rejected, summary_path):
         output.parent.mkdir(parents=True, exist_ok=True)
 
-    _remove_partition_files(validated.parent)
-    _remove_partition_files(rejected.parent)
-
+    # Stage every artifact before touching the last successful partition. If a
+    # DuckDB query or Parquet write fails, the previous run remains usable.
+    staging_parent = resolved_data_dir / "processed"
+    staging_parent.mkdir(parents=True, exist_ok=True)
     ingested_at = datetime.now(UTC).replace(tzinfo=None, microsecond=0)
-    with duckdb.connect() as connection:
-        connection.execute("create temp table valid_zone_ids (location_id integer primary key)")
-        connection.executemany(
-            "insert into valid_zone_ids values (?)",
-            [(zone_id,) for zone_id in sorted(zone_ids)],
-        )
-        connection.execute(
-            _classification_sql(
+    with tempfile.TemporaryDirectory(prefix=".validation-", dir=staging_parent) as temp:
+        staging_dir = Path(temp)
+        staged_validated = staging_dir / "validated.parquet"
+        staged_rejected = staging_dir / "rejected.parquet"
+        staged_summary = staging_dir / "summary.json"
+        with duckdb.connect() as connection:
+            connection.execute("create temp table valid_zone_ids (location_id integer primary key)")
+            connection.executemany(
+                "insert into valid_zone_ids values (?)",
+                [(zone_id,) for zone_id in sorted(zone_ids)],
+            )
+            connection.execute(
+                _classification_sql(
+                    source=source,
+                    source_columns=columns,
+                    year=year,
+                    month=month,
+                    service=service,
+                    ingested_at=ingested_at,
+                )
+            )
+            _copy_classification(connection, staged_validated, "quality_status <> 'rejected'")
+            _copy_classification(connection, staged_rejected, "quality_status = 'rejected'")
+            summary = _build_summary(
+                connection=connection,
                 source=source,
-                source_columns=columns,
+                validated=validated,
+                rejected=rejected,
                 year=year,
                 month=month,
                 service=service,
-                ingested_at=ingested_at,
+                validated_at=ingested_at,
             )
+        _write_json(staged_summary, summary)
+        _publish_artifacts(
+            staging_dir,
+            (
+                (staged_validated, validated),
+                (staged_rejected, rejected),
+                (staged_summary, summary_path),
+            ),
         )
-        _copy_classification(connection, validated, "quality_status <> 'rejected'")
-        _copy_classification(connection, rejected, "quality_status = 'rejected'")
-        summary = _build_summary(
-            connection=connection,
-            source=source,
-            validated=validated,
-            rejected=rejected,
-            year=year,
-            month=month,
-            service=service,
-            validated_at=ingested_at,
-        )
-
-    _write_json(summary_path, summary)
     return ValidationResult(
         summary_path=summary_path,
         validated_path=validated,
@@ -497,11 +513,36 @@ def _build_summary(
     }
 
 
-def _remove_partition_files(directory: Path) -> None:
-    if not directory.exists():
-        return
-    for path in directory.glob("*.parquet"):
-        path.unlink()
+def _publish_artifacts(
+    staging_dir: Path,
+    artifacts: tuple[tuple[Path, Path], ...],
+) -> None:
+    """Replace a validated partition, restoring the previous outputs on errors.
+
+    Staging and backups live on the same filesystem as the published artifacts.
+    This is failure-rollback protection, not an atomic multi-file transaction
+    against abrupt power loss; readers should not run during publication.
+    """
+    backups: dict[Path, Path] = {}
+    for index, (_, destination) in enumerate(artifacts):
+        if destination.exists():
+            backup = staging_dir / f"backup-{index}{destination.suffix}"
+            shutil.copy2(destination, backup)
+            backups[destination] = backup
+
+    published: list[Path] = []
+    try:
+        for staged, destination in artifacts:
+            staged.replace(destination)
+            published.append(destination)
+    except OSError:
+        for destination in reversed(published):
+            backup = backups.get(destination)
+            if backup is None:
+                destination.unlink(missing_ok=True)
+            else:
+                backup.replace(destination)
+        raise
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -515,6 +556,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--year", type=int, required=True)
     parser.add_argument("--month", type=int, required=True)
     parser.add_argument("--service", choices=("yellow",), default="yellow")
+    parser.add_argument("--mode", choices=("auto", "raw", "sample"), default="auto")
+    parser.add_argument("--input-path", type=Path)
     return parser
 
 
@@ -524,6 +567,8 @@ def main(argv: list[str] | None = None) -> int:
         year=arguments.year,
         month=arguments.month,
         service=arguments.service,
+        mode=arguments.mode,
+        input_path=arguments.input_path,
     )
     print(json.dumps(result.summary, indent=2, sort_keys=True))
     return 0

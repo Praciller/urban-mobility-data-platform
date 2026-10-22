@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -21,17 +22,34 @@ class QualityReportRepository:
         if not candidates:
             raise ResourceNotFoundError("No validation summary is available")
 
-        path = candidates[-1]
-        try:
-            if path.stat().st_size > MAX_VALIDATION_SUMMARY_BYTES:
-                raise DataUnavailableError("The latest validation summary exceeds the size limit")
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except DataUnavailableError:
-            raise
-        except (OSError, json.JSONDecodeError) as error:
-            raise DataUnavailableError("The latest validation summary is unreadable") from error
+        # Backfills may finish after a newer source month. File-name order is
+        # therefore not a reliable indicator of the most recently completed run.
+        latest: tuple[datetime, dict[str, Any]] | None = None
+        for path in candidates:
+            try:
+                if path.stat().st_size > MAX_VALIDATION_SUMMARY_BYTES:
+                    raise DataUnavailableError("A validation summary exceeds the size limit")
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except DataUnavailableError:
+                raise
+            except (OSError, json.JSONDecodeError) as error:
+                raise DataUnavailableError("A validation summary is unreadable") from error
 
-        return _normalize_summary(payload, path.name)
+            normalized = _normalize_summary(payload, path.name)
+            try:
+                timestamp = datetime.fromisoformat(
+                    normalized["validated_at"].replace("Z", "+00:00")
+                )
+            except ValueError as error:
+                raise DataUnavailableError(
+                    "A validation summary has an invalid timestamp"
+                ) from error
+            if timestamp.tzinfo is None:
+                raise DataUnavailableError("A validation summary timestamp must have a timezone")
+            if latest is None or timestamp > latest[0]:
+                latest = (timestamp, normalized)
+        assert latest is not None
+        return latest[1]
 
 
 def _normalize_summary(payload: object, artifact_name: str) -> dict[str, Any]:

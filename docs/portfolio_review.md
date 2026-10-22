@@ -33,8 +33,9 @@ This path is designed for a quick reviewer pass without cloud setup or a full of
    uv run python scripts/run_demo.py --data-dir $env:DATA_DIR --year 2026 --month 1 --service yellow --sample-rows 1000
    ```
 
-   The fixture contains three physical rows: one valid trip, one duplicate warning retained for
-   analytics, and one negative-fare record written to the rejected partition. It demonstrates
+   The fixture contains three physical rows: one valid trip, one duplicate warning retained in
+   staging/anomaly evidence but excluded from trip KPIs, and one negative-fare record written
+   to the rejected partition. It demonstrates
    behavior and lineage, not production volume or performance.
 
 6. Start FastAPI:

@@ -5,7 +5,11 @@ PowerShell-friendly and assume the repository root as the starting directory.
 
 ## Verification Snapshot
 
-The full baseline was verified locally on 2026-06-20 before the latest quality/API gap closure:
+The full baseline was verified locally on 2026-06-20 before the latest quality/API gap closure.
+This section records historical pre-deduplication measurements; the current
+fixture now has three physical rows, two validated staging rows, one curated fact trip,
+one rejected row, and $23.50 in curated revenue:
+
 
 - 62 Python tests passed; Ruff lint and format checks passed.
 - The offline demo completed twice with 2 validated staging/fact rows, proving month-level
