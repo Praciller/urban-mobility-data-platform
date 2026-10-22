@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
 
 import pyarrow as pa
@@ -122,7 +123,11 @@ def restore_revision(
             raise PublicationError("Requested revision is already active")
         verify_revision_for_restore(target, year=year, month=month, service=service)
         activate_version(data_dir, year, month, service, target)
-        return inspect_versions(data_dir, year=year, month=month, service=service)
+        report = inspect_versions(data_dir, year=year, month=month, service=service)
+        # This operation changes publication files only. A previously loaded
+        # DuckDB staging partition and dbt marts are NOT implicitly reverted.
+        report["warehouse_sync_required"] = True
+        return report
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -155,6 +160,13 @@ def main(argv: list[str] | None = None) -> int:
     except PublicationError as error:
         parser.exit(1, f"error: {error}\n")
     print(json.dumps(result, indent=2))
+    if args.restore:
+        print(
+            "WARNING: Publication pointer restored only. DuckDB staging and dbt marts "
+            "have NOT been restored; reload this partition and rerun dbt before "
+            "using dashboard metrics.",
+            file=sys.stderr,
+        )
     return 0
 
 

@@ -210,3 +210,36 @@ def test_restore_refuses_corrupted_parquet_and_inconsistent_summary(tmp_path: Pa
             expected_current=new_revision,
         )
     assert current_version(tmp_path, 2026, 1, "yellow") == new.validated_path.parent
+
+
+def test_restore_cli_declares_unreconciled_warehouse(tmp_path: Path) -> None:
+    fixture = create_demo_fixture(
+        data_dir=tmp_path, year=2026, month=1, service="yellow", sample_rows=1000
+    )
+    source = Path(str(fixture["trip_path"]))
+    previous = validate_trip_data(
+        year=2026, month=1, service="yellow", data_dir=tmp_path, input_path=source
+    )
+    active = validate_trip_data(
+        year=2026, month=1, service="yellow", data_dir=tmp_path, input_path=source
+    )
+    command = [
+        sys.executable,
+        "scripts/manage_publications.py",
+        "--data-dir",
+        str(tmp_path),
+        "--year",
+        "2026",
+        "--month",
+        "1",
+        "--restore",
+        previous.validated_path.parent.name,
+        "--expect-current",
+        active.validated_path.parent.name,
+    ]
+    result = subprocess.run(command, capture_output=True, text=True, check=True, timeout=20)
+    report = json.loads(result.stdout)
+    assert report["warehouse_sync_required"] is True
+    assert report["active_revision"] == previous.validated_path.parent.name
+    assert "DuckDB staging and dbt marts" in result.stderr
+    assert "NOT been restored" in result.stderr

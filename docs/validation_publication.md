@@ -50,6 +50,19 @@ uv run python scripts/manage_publications.py --data-dir C:/data/urban-mobility-d
 
 Restore moves only the pointer; all versions remain on disk. Do not use placeholder revision values literally. There is no automatic cleanup, no credential handling, and no modification to hosted deployments.
 
+**Critical recovery boundary:** Restoring the published Parquet/summary pointer does **not** automatically revert the DuckDB staging partition or any dbt facts/marts. Until reconciliation, `/quality/summary` may describe the restored validation run while Dashboard metrics still reflect the previously loaded data. The restore CLI emits a warning and sets `warehouse_sync_required: true` in its JSON result. For a consistent local demo, after recording the restored revision and pausing other pipeline activity, run:
+
+```powershell
+# Select the same external DATA_DIR / DUCKDB_PATH used by your actual local demo.
+$env:DATA_DIR = "C:/data/urban-mobility-data-platform"
+$env:DUCKDB_PATH = "C:/data/urban-mobility-data-platform/processed/urban_mobility.duckdb"
+uv run python -m urban_mobility.load_duckdb --year 2026 --month 1 --service yellow
+uv run dbt run --project-dir dbt --profiles-dir dbt
+uv run dbt test --project-dir dbt --profiles-dir dbt
+```
+
+Before treating recovery as finished, verify loaded staging counts, dbt tests and API/Quality results against the restored summary. If the database uses a different storage location, use the actual configured path instead. These commands are **not** executed automatically by Restore, and this workflow is not a transactional rollback spanning Parquet, DuckDB and dbt. Do not run `scripts/run_demo.py` as a recovery shortcut, because it can regenerate demo fixtures.
+
 ## Test evidence
 
 - New tests simulate failure of pointer replacement, corrupt pointers, and incomplete versions; they verify that old published Parquet and summary data remain accessible.

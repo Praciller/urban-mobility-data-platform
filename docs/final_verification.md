@@ -17,7 +17,9 @@ The preceding test pass covered **97 Python tests**, Ruff lint
 and format, repository readiness/guardrails, and **9 Playwright browser tests**
 (1 skip). The 10 GitHub CI jobs previously passed on commit `cd529f58`;
 check current PR-head CI status independently before merging.
-The following June snapshot is historical.
+Restore on the publication layer does not automatically revert DuckDB or dbt marts; see
+[post-restore warehouse reconciliation](validation_publication.md#read-only-inspection-and-guarded-restore)
+before claiming full-dashboard recovery. The following June snapshot is historical.
 
 The full baseline was verified locally on 2026-06-20 before the latest quality/API gap closure.
 This section records historical pre-deduplication measurements; the current
