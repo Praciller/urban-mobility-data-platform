@@ -30,12 +30,14 @@ DATA_DIR/processed/publications/service=yellow/year=2026/month=01/
 - **Do not automatically delete old versions.** Other readers or a manual recovery may still use them. Review any unreferenced run folders before explicit cleanup.
 - **A single read of the manifest provides one snapshot.** Independent path resolver calls made across a simultaneous activation may each resolve a different *complete* revision; pin a revision path for multi-artifact processing.
 - **Per-partition cross-process writer lock:** local Windows byte-range locks and POSIX advisory locks prevent two validations/restores from publishing the same service/month concurrently. Contenders fail with a clear error instead of overwriting one another; the OS releases locks after a process dies. The persistent `publication.lock` file is never unlinked because removing it creates an inode-lock race. This local locking guarantee is **not** certified for network/shared filesystems.
-- Atomic replacement covers process crashes at the pointer update; **physical power-loss durability on Windows, removable media and network filesystems is not certified**. Test the underlying filesystem's replacement guarantees before claiming crash consistency under hardware failure.
+- Atomic replacement covers process crashes at the pointer update. **On local Windows NTFS, short-lived file-sharing errors are retried with a one-second upper bound for pointer reads and replacement.** This prevents transient Reader/Writer contention from failing the run; persistent permission failures still surface. **Physical power-loss durability on Windows, removable media and network filesystems is not certified**. Test the underlying filesystem's replacement guarantees before claiming crash consistency under hardware failure.
 - `ValidationResult` paths now include a run revision rather than fixed legacy output names. Consumers must not construct versioned paths manually.
 
 ## Read-only inspection and guarded restore
 
-`scripts/manage_publications.py` lists current/previous versions **without modifying data**. To deliberately restore an immutable previous revision, supply both the target and the exact currently observed revision. The tool rechecks the expected active version while holding the same partition lock; a mismatch or incomplete target is rejected.
+`scripts/manage_publications.py` lists current/previous versions **without modifying data**. Its `total_bytes`, `inactive_bytes`, and per-revision `size_bytes` fields quantify **versioned artifact file storage only**, not filesystem overhead or other datasets. An inactive revision is **not automatically safe to delete**: readers, recovery workflows and operators may still depend on it. No delete/garbage-collection operation is exposed.
+
+To deliberately restore an immutable previous revision, supply both the target and the exact currently observed revision. The tool rechecks the expected active version while holding the same partition lock; it also validates the candidate's Parquet metadata, summary row counts, partition identity and output paths before activating it. A mismatch or incomplete/corrupt candidate is rejected. This is a structural preflight, **not a cryptographic checksum or full row scan**.
 
 ```powershell
 uv run python scripts/manage_publications.py --data-dir C:/data/urban-mobility-data-platform --year 2026 --month 1
@@ -52,7 +54,8 @@ Restore moves only the pointer; all versions remain on disk. Do not use placehol
 
 - New tests simulate failure of pointer replacement, corrupt pointers, and incomplete versions; they verify that old published Parquet and summary data remain accessible.
 - Cross-process tests verify that concurrent writers are refused, locks become available after a child publisher is killed, and separate monthly partitions can run independently.
-- Restore tests verify the mandatory expected-current guard, invalid/missing target refusal, read-only default CLI, and precedence of an active snapshot over legacy reports.
+- Restore tests verify the mandatory expected-current guard, invalid/missing/corrupted target refusal, Parquet/summary row-count reconciliation, read-only default CLI, storage inventory, and precedence of an active snapshot over legacy reports.
+- Bounded Windows multi-reader stress tests repeatedly swap the current pointer while several readers pin a revision and read all three artifacts; verify that no reader sees a mixed version. File-sharing conflicts are retried briefly, not ignored.
 - Existing Dagster, DuckDB, API, and integration tests must remain passing.
 - Use `uv run pytest` and `uv run python scripts/benchmark_pipeline.py --rows 1000` to verify.
 

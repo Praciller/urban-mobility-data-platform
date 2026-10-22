@@ -142,3 +142,71 @@ def test_active_snapshot_supersedes_future_dated_legacy_report(tmp_path: Path) -
     selected = QualityReportRepository(tmp_path).latest_summary()
     assert selected["total_rows"] == 3
     assert selected["validated_at"] == current.summary["validated_at"]
+
+
+def test_inventory_reports_actual_revision_storage_without_deleting(tmp_path: Path) -> None:
+    fixture = create_demo_fixture(
+        data_dir=tmp_path, year=2026, month=1, service="yellow", sample_rows=1000
+    )
+    source = Path(str(fixture["trip_path"]))
+    old = validate_trip_data(
+        year=2026, month=1, service="yellow", data_dir=tmp_path, input_path=source
+    )
+    new = validate_trip_data(
+        year=2026, month=1, service="yellow", data_dir=tmp_path, input_path=source
+    )
+    report = inspect_versions(tmp_path, year=2026, month=1, service="yellow")
+    expected_old_size = sum(
+        (old.validated_path.parent / name).stat().st_size
+        for name in ("validated.parquet", "rejected.parquet", "summary.json")
+    )
+    expected_new_size = sum(
+        (new.validated_path.parent / name).stat().st_size
+        for name in ("validated.parquet", "rejected.parquet", "summary.json")
+    )
+    assert report["total_bytes"] == expected_old_size + expected_new_size
+    assert report["inactive_bytes"] == expected_old_size
+    assert report["active_revision"] == new.validated_path.parent.name
+    assert old.validated_path.is_file()
+
+
+def test_restore_refuses_corrupted_parquet_and_inconsistent_summary(tmp_path: Path) -> None:
+    fixture = create_demo_fixture(
+        data_dir=tmp_path, year=2026, month=1, service="yellow", sample_rows=1000
+    )
+    source = Path(str(fixture["trip_path"]))
+    old = validate_trip_data(
+        year=2026, month=1, service="yellow", data_dir=tmp_path, input_path=source
+    )
+    new = validate_trip_data(
+        year=2026, month=1, service="yellow", data_dir=tmp_path, input_path=source
+    )
+    old_revision = old.validated_path.parent.name
+    new_revision = new.validated_path.parent.name
+    original = old.validated_path.read_bytes()
+    old.validated_path.write_bytes(b"not parquet")
+    try:
+        with pytest.raises(PublicationError, match="corrupted"):
+            restore_revision(
+                tmp_path,
+                year=2026,
+                month=1,
+                service="yellow",
+                revision=old_revision,
+                expected_current=new_revision,
+            )
+    finally:
+        old.validated_path.write_bytes(original)
+    summary = json.loads(old.summary_path.read_text(encoding="utf-8"))
+    summary["status_counts"]["valid"] = 999
+    old.summary_path.write_text(json.dumps(summary), encoding="utf-8")
+    with pytest.raises(PublicationError, match="row counts"):
+        restore_revision(
+            tmp_path,
+            year=2026,
+            month=1,
+            service="yellow",
+            revision=old_revision,
+            expected_current=new_revision,
+        )
+    assert current_version(tmp_path, 2026, 1, "yellow") == new.validated_path.parent

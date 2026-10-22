@@ -13,6 +13,7 @@ import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from time import monotonic, sleep
 from uuid import uuid4
 
 _REVISION = re.compile(r"^[0-9a-f]{32}$")
@@ -82,13 +83,25 @@ def allocate_version(data_dir: Path, year: int, month: int, service: str) -> Pat
     return version
 
 
+def _read_pointer(pointer: Path) -> str:
+    """Handle short Windows sharing violations during a pointer replacement."""
+    deadline = monotonic() + 1.0
+    while True:
+        try:
+            return pointer.read_text(encoding="utf-8")
+        except PermissionError:
+            if os.name != "nt" or monotonic() >= deadline:
+                raise
+            sleep(0.005)
+
+
 def current_version(data_dir: Path, year: int, month: int, service: str) -> Path | None:
     root = partition_root(data_dir, year, month, service)
     pointer = root / "current.json"
     if not pointer.exists():
         return None
     try:
-        payload = json.loads(pointer.read_text(encoding="utf-8"))
+        payload = json.loads(_read_pointer(pointer))
         if not isinstance(payload, dict) or payload.get("schema_version") != 1:
             raise ValueError("Invalid publication manifest schema")
         revision = payload.get("revision")
@@ -102,6 +115,27 @@ def current_version(data_dir: Path, year: int, month: int, service: str) -> Path
         raise PublicationError(
             f"Invalid active publication for {service} {year}-{month:02d}"
         ) from error
+
+
+def _replace_pointer(temporary: Path, pointer: Path) -> None:
+    """Retry transient Windows sharing violations, preserving the last pointer.
+
+    POSIX keeps the normal single atomic replace behavior. This does not
+    suppress permanent permissions errors or unexpected filesystem failures.
+    """
+    deadline = monotonic() + 1.0
+    while True:
+        try:
+            temporary.replace(pointer)
+            return
+        except PermissionError as error:
+            if (
+                os.name != "nt"
+                or getattr(error, "winerror", None) not in (5, 32)
+                or monotonic() >= deadline
+            ):
+                raise
+            sleep(0.01)
 
 
 def activate_version(data_dir: Path, year: int, month: int, service: str, version: Path) -> None:
@@ -133,7 +167,7 @@ def activate_version(data_dir: Path, year: int, month: int, service: str, versio
             stream.write("\n")
             stream.flush()
             os.fsync(stream.fileno())
-        temporary.replace(pointer)
+        _replace_pointer(temporary, pointer)
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)

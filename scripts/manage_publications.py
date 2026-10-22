@@ -10,6 +10,9 @@ import json
 import re
 from pathlib import Path
 
+import pyarrow as pa
+import pyarrow.parquet as pq
+
 from urban_mobility.validation_store import (
     PublicationError,
     activate_version,
@@ -26,21 +29,76 @@ def inspect_versions(data_dir: Path, *, year: int, month: int, service: str) -> 
     root = partition_root(data_dir, year, month, service)
     active = current_version(data_dir, year, month, service)
     versions = sorted((root / "versions").glob("*")) if (root / "versions").is_dir() else []
+    details = []
+    for path in versions:
+        if path.is_symlink() or not path.is_dir() or _REVISION.fullmatch(path.name) is None:
+            continue
+        paths = [path / name for name in _FILES]
+        complete = all(item.is_file() and not item.is_symlink() for item in paths)
+        size_bytes = sum(
+            item.stat().st_size for item in paths if item.is_file() and not item.is_symlink()
+        )
+        details.append(
+            {
+                "revision": path.name,
+                "complete": complete,
+                "active": path == active,
+                "size_bytes": size_bytes,
+            }
+        )
     return {
         "service": service,
         "year": year,
         "month": month,
         "active_revision": active.name if active else None,
-        "versions": [
-            {
-                "revision": path.name,
-                "complete": all((path / name).is_file() for name in _FILES),
-                "active": path == active,
-            }
-            for path in versions
-            if path.is_dir() and _REVISION.fullmatch(path.name)
-        ],
+        "total_bytes": sum(item["size_bytes"] for item in details),
+        "inactive_bytes": sum(item["size_bytes"] for item in details if not item["active"]),
+        "versions": details,
     }
+
+
+def verify_revision_for_restore(version: Path, *, year: int, month: int, service: str) -> None:
+    """Check Parquet footers and quality counts before activating a previous run."""
+    try:
+        if version.is_symlink() or not version.is_dir():
+            raise ValueError("Revision directory is missing or symlinked")
+        for name in _FILES:
+            artifact = version / name
+            if not artifact.is_file() or artifact.is_symlink():
+                raise ValueError(f"Missing or unsafe artifact: {name}")
+        accepted = pq.read_metadata(version / "validated.parquet").num_rows
+        rejected = pq.read_metadata(version / "rejected.parquet").num_rows
+        with (version / "summary.json").open(encoding="utf-8") as stream:
+            summary = json.load(stream)
+        if not isinstance(summary, dict):
+            raise ValueError("Summary is not a JSON object")
+        if (summary.get("year"), summary.get("month"), summary.get("service")) != (
+            year,
+            month,
+            service,
+        ):
+            raise ValueError("Summary partition does not match")
+        counts = summary.get("status_counts")
+        if not isinstance(counts, dict) or any(
+            type(counts.get(key)) is not int or counts[key] < 0
+            for key in ("valid", "warning", "rejected")
+        ):
+            raise ValueError("Summary has invalid quality counts")
+        if accepted != counts["valid"] + counts["warning"] or rejected != counts["rejected"]:
+            raise ValueError("Parquet row counts do not match the summary")
+        if summary.get("total_rows") != accepted + rejected:
+            raise ValueError("Summary total does not match source classification")
+        outputs = summary.get("outputs")
+        if (
+            not isinstance(outputs, dict)
+            or outputs.get("validated") != str(version / "validated.parquet")
+            or outputs.get("rejected") != str(version / "rejected.parquet")
+        ):
+            raise ValueError("Summary output paths do not refer to this revision")
+    except (OSError, ValueError, TypeError, KeyError, pa.ArrowException) as error:
+        raise PublicationError(
+            f"Unsafe, corrupted or incomplete revision; restore refused: {error}"
+        ) from error
 
 
 def restore_revision(
@@ -62,6 +120,7 @@ def restore_revision(
         target = partition_root(data_dir, year, month, service) / "versions" / revision
         if target == active:
             raise PublicationError("Requested revision is already active")
+        verify_revision_for_restore(target, year=year, month=month, service=service)
         activate_version(data_dir, year, month, service, target)
         return inspect_versions(data_dir, year=year, month=month, service=service)
 

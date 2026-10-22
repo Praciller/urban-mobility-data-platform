@@ -54,7 +54,7 @@ These documents describe changes proposed in the draft PR, not the currently hos
 
 ## Validation publication and benchmarks
 
-The proposed hardening publishes immutable validation snapshots using a single atomic manifest pointer instead of overwriting three files in sequence. See [publication protocol](docs/validation_publication.md) for cross-process writer locks, manual read-only inspection, guarded recovery, compatibility, cleanup and crash-boundary limitations.
+The proposed hardening publishes immutable validation snapshots using a single atomic manifest pointer instead of overwriting three files in sequence. See [publication protocol](docs/validation_publication.md) for cross-process writer locks, Windows Reader/Writer contention handling, read-only revision/storage inventory, guarded Parquet-verified recovery, compatibility, cleanup and crash-boundary limitations.
 
 An offline synthetic batch benchmark is available through `uv run python scripts/benchmark_pipeline.py --rows 10000`. It is **not** a real-source throughput or production SLA result. See [benchmark evidence](docs/synthetic_benchmark_2026-10-22.md).
 

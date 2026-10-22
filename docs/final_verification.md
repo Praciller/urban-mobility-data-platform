@@ -9,8 +9,11 @@ For newer evidence (2026-10-22, Draft PR #24), see
 [bounded real-source validation](real_data_smoke_2026-10-22.md) and
 [security review](security_review_2026-10-22.md),
 [publication protocol](validation_publication.md), and
-[synthetic benchmark](synthetic_benchmark_2026-10-22.md). The latest local
-correctness tests on the Draft PR branch passed **97 Python tests**, Ruff lint
+[synthetic benchmark](synthetic_benchmark_2026-10-22.md). The most recent local
+correctness tests on the Draft PR branch include concurrent pinned-reader
+stress tests, revision storage inventory and corrupted-restore rejection;
+the full Python test count and CI head SHA are recorded in the latest PR checks.
+The preceding test pass covered **97 Python tests**, Ruff lint
 and format, repository readiness/guardrails, and **9 Playwright browser tests**
 (1 skip). The 10 GitHub CI jobs previously passed on commit `cd529f58`;
 check current PR-head CI status independently before merging.
