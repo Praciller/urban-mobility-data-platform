@@ -98,7 +98,10 @@ def run_demo(
                     str(sample_rows),
                 ],
             ),
-            ("validate", [sys.executable, "-m", "urban_mobility.validate", *shared_args]),
+            (
+                "validate",
+                [sys.executable, "-m", "urban_mobility.validate", *shared_args, "--mode", "sample"],
+            ),
             ("load_duckdb", [sys.executable, "-m", "urban_mobility.load_duckdb", *shared_args]),
             ("dbt_parse", _dbt_command(dbt_executable, repository_root, "parse")),
             ("dbt_run", _dbt_command(dbt_executable, repository_root, "run")),

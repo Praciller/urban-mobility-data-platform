@@ -232,6 +232,28 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  python-dependency-security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: ".python-version"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.21"
+
+      - name: Export locked runtime dependencies
+        run: uv export --locked --no-dev --no-emit-project --format requirements-txt --output-file "$RUNNER_TEMP/requirements-audit.txt" > /dev/null
+
+      - name: Audit Python dependency advisories
+        run: uvx --from pip-audit==2.10.1 pip-audit --no-deps --disable-pip -r "$RUNNER_TEMP/requirements-audit.txt"
+
   dependency-security:
     runs-on: ubuntu-latest
     steps:

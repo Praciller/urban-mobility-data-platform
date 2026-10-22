@@ -24,3 +24,9 @@ select
     source_file,
     ingested_at
 from {{ ref("stg_yellow_trips") }}
+-- Preserve duplicate occurrences in staging/quality but exclude them from
+-- business KPIs: a duplicate source row is not another passenger trip.
+where not list_contains(
+    string_split(coalesce(quality_reasons, ''), '|'),
+    'duplicate_record'
+)

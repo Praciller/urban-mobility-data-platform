@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import shutil
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -14,6 +15,12 @@ import pyarrow.parquet as pq
 from urban_mobility.config import get_data_dir
 from urban_mobility.download import validate_trip_request, zone_lookup_path
 from urban_mobility.ingest import resolve_trip_path
+from urban_mobility.validation_store import (
+    activate_version,
+    allocate_version,
+    current_version,
+    partition_write_lock,
+)
 
 MAX_TRIP_DURATION_MINUTES = 24 * 60
 MAX_REASONABLE_SPEED_MPH = 100
@@ -43,11 +50,17 @@ class ValidationResult:
     summary: dict[str, Any]
 
 
-def validation_summary_path(data_dir: Path, year: int, month: int) -> Path:
+def validation_summary_path(data_dir: Path, year: int, month: int, service: str = "yellow") -> Path:
+    active = current_version(data_dir, year, month, service)
+    if active is not None:
+        return active / "summary.json"
     return data_dir / "reports" / "data_quality" / f"validation_{year}_{month:02d}.json"
 
 
 def validated_trip_path(data_dir: Path, year: int, month: int, service: str) -> Path:
+    active = current_version(data_dir, year, month, service)
+    if active is not None:
+        return active / "validated.parquet"
     return (
         data_dir
         / "processed"
@@ -60,6 +73,9 @@ def validated_trip_path(data_dir: Path, year: int, month: int, service: str) -> 
 
 
 def rejected_trip_path(data_dir: Path, year: int, month: int, service: str) -> Path:
+    active = current_version(data_dir, year, month, service)
+    if active is not None:
+        return active / "rejected.parquet"
     return (
         data_dir
         / "processed"
@@ -78,6 +94,7 @@ def validate_trip_data(
     service: str,
     data_dir: Path | None = None,
     input_path: Path | None = None,
+    mode: str = "auto",
 ) -> ValidationResult:
     """Validate a Yellow Taxi Parquet file and write classified outputs."""
     validate_trip_request(year, month, service)
@@ -85,59 +102,68 @@ def validate_trip_data(
     source = (
         input_path.expanduser().resolve()
         if input_path
-        else resolve_trip_path(resolved_data_dir, year, month, service)
+        else resolve_trip_path(resolved_data_dir, year, month, service, mode=mode)
     )
     zones = zone_lookup_path(resolved_data_dir)
     _validate_inputs(source, zones)
     columns = pq.read_schema(source).names
     zone_ids = _load_zone_ids(zones)
 
-    validated = validated_trip_path(resolved_data_dir, year, month, service)
-    rejected = rejected_trip_path(resolved_data_dir, year, month, service)
-    summary_path = validation_summary_path(resolved_data_dir, year, month)
-    for output in (validated, rejected, summary_path):
-        output.parent.mkdir(parents=True, exist_ok=True)
-
-    _remove_partition_files(validated.parent)
-    _remove_partition_files(rejected.parent)
-
-    ingested_at = datetime.now(UTC).replace(tzinfo=None, microsecond=0)
-    with duckdb.connect() as connection:
-        connection.execute("create temp table valid_zone_ids (location_id integer primary key)")
-        connection.executemany(
-            "insert into valid_zone_ids values (?)",
-            [(zone_id,) for zone_id in sorted(zone_ids)],
+    with partition_write_lock(resolved_data_dir, year, month, service):
+        # Each run is immutable. Only the single atomic manifest pointer decides
+        # which three artifacts are visible to readers; an interrupted run cannot
+        # publish a partially written snapshot.
+        version = allocate_version(resolved_data_dir, year, month, service)
+        validated = version / "validated.parquet"
+        rejected = version / "rejected.parquet"
+        summary_path = version / "summary.json"
+        ingested_at = datetime.now(UTC).replace(tzinfo=None, microsecond=0)
+        try:
+            with duckdb.connect() as connection:
+                connection.execute(
+                    "create temp table valid_zone_ids (location_id integer primary key)"
+                )
+                connection.executemany(
+                    "insert into valid_zone_ids values (?)",
+                    [(zone_id,) for zone_id in sorted(zone_ids)],
+                )
+                connection.execute(
+                    _classification_sql(
+                        source=source,
+                        source_columns=columns,
+                        year=year,
+                        month=month,
+                        service=service,
+                        ingested_at=ingested_at,
+                    )
+                )
+                _copy_classification(connection, validated, "quality_status <> 'rejected'")
+                _copy_classification(connection, rejected, "quality_status = 'rejected'")
+                summary = _build_summary(
+                    connection=connection,
+                    source=source,
+                    validated=validated,
+                    rejected=rejected,
+                    year=year,
+                    month=month,
+                    service=service,
+                    validated_at=ingested_at,
+                )
+            _write_json(summary_path, summary)
+            activate_version(resolved_data_dir, year, month, service, version)
+        except Exception:
+            # Before the pointer update, this run is invisible and can be cleaned.
+            # Never delete a run that is already current, even if a post-commit
+            # cleanup operation or another exception fails.
+            if current_version(resolved_data_dir, year, month, service) != version:
+                shutil.rmtree(version)
+            raise
+        return ValidationResult(
+            summary_path=summary_path,
+            validated_path=validated,
+            rejected_path=rejected,
+            summary=summary,
         )
-        connection.execute(
-            _classification_sql(
-                source=source,
-                source_columns=columns,
-                year=year,
-                month=month,
-                service=service,
-                ingested_at=ingested_at,
-            )
-        )
-        _copy_classification(connection, validated, "quality_status <> 'rejected'")
-        _copy_classification(connection, rejected, "quality_status = 'rejected'")
-        summary = _build_summary(
-            connection=connection,
-            source=source,
-            validated=validated,
-            rejected=rejected,
-            year=year,
-            month=month,
-            service=service,
-            validated_at=ingested_at,
-        )
-
-    _write_json(summary_path, summary)
-    return ValidationResult(
-        summary_path=summary_path,
-        validated_path=validated,
-        rejected_path=rejected,
-        summary=summary,
-    )
 
 
 def _validate_inputs(source: Path, zones: Path) -> None:
@@ -497,13 +523,6 @@ def _build_summary(
     }
 
 
-def _remove_partition_files(directory: Path) -> None:
-    if not directory.exists():
-        return
-    for path in directory.glob("*.parquet"):
-        path.unlink()
-
-
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -515,6 +534,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--year", type=int, required=True)
     parser.add_argument("--month", type=int, required=True)
     parser.add_argument("--service", choices=("yellow",), default="yellow")
+    parser.add_argument("--mode", choices=("auto", "raw", "sample"), default="auto")
+    parser.add_argument("--input-path", type=Path)
     return parser
 
 
@@ -524,6 +545,8 @@ def main(argv: list[str] | None = None) -> int:
         year=arguments.year,
         month=arguments.month,
         service=arguments.service,
+        mode=arguments.mode,
+        input_path=arguments.input_path,
     )
     print(json.dumps(result.summary, indent=2, sort_keys=True))
     return 0

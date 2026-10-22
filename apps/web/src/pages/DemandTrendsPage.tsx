@@ -21,7 +21,7 @@ export function DemandTrendsPage({ data }: { data: DashboardData }) {
         <article className="panel panel--wide">
           <h3>Daily metrics</h3>
           <LineChartPanel
-            data={data.daily.items}
+            data={data.dailyTrend}
             emptyTitle="No daily metrics available"
             lines={[
               { key: "trip_count", name: "Trips", tone: "primary" },
@@ -35,7 +35,7 @@ export function DemandTrendsPage({ data }: { data: DashboardData }) {
           <h3>Revenue by day</h3>
           <BarChartPanel
             bars={[{ key: "total_revenue", name: "Revenue", tone: "accent" }]}
-            data={data.daily.items}
+            data={data.dailyTrend}
             emptyTitle="No revenue trend metrics available"
             xKey="pickup_date"
           />

@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import { expect, test, type Page } from "@playwright/test";
 
 const dashboardPages = [
@@ -10,6 +12,13 @@ const dashboardPages = [
   ["Data Quality / Pipeline Status", "Data Quality / Pipeline Status"],
 ] as const;
 const apiPort = process.env.URBAN_MOBILITY_E2E_API_PORT ?? "8000";
+const captureScreenshots = process.env.URBAN_MOBILITY_CAPTURE_SCREENSHOTS === "1";
+
+async function captureReference(page: Page, name: string): Promise<void> {
+  if (!captureScreenshots || test.info().project.name !== "desktop-chromium") return;
+  const destination = path.resolve(import.meta.dirname, "../../../docs/screenshots", name);
+  await page.screenshot({ path: destination, fullPage: true });
+}
 
 async function openNavigationIfCompact(page: Page): Promise<void> {
   const toggle = page.getByRole("button", { name: "Open dashboard navigation" });
@@ -31,8 +40,9 @@ test.describe("sample-backed mobility dashboard", () => {
     await page.goto("/");
     await expect(page.getByText("DuckDB connected")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
-    await expect(page.getByText("$47.00")).toBeVisible();
+    await expect(page.getByText("$23.50")).toBeVisible();
     expect(browserErrors).toEqual([]);
+    await captureReference(page, "dashboard-overview.png");
 
     for (const [label, heading] of dashboardPages) {
       await openNavigationIfCompact(page);
@@ -76,6 +86,7 @@ test.describe("sample-backed mobility dashboard", () => {
     await page.getByRole("button", { name: "Anomaly Explorer", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Anomaly Explorer" })).toBeVisible();
     await expect(page.getByText("duplicate_record")).toBeVisible();
+    await captureReference(page, "dashboard-anomalies.png");
 
     await openNavigationIfCompact(page);
     await page.getByRole("button", { name: "Data Quality / Pipeline Status", exact: true }).click();
@@ -84,6 +95,7 @@ test.describe("sample-backed mobility dashboard", () => {
     ).toBeVisible();
     await expect(page.getByText("Rejected rows")).toBeVisible();
     await expect(page.getByText("Warning rows")).toBeVisible();
+    await captureReference(page, "dashboard-quality.png");
   });
 
   test("recovers from an API-unavailable state through Retry", async ({ page }) => {

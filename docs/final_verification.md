@@ -5,7 +5,27 @@ PowerShell-friendly and assume the repository root as the starting directory.
 
 ## Verification Snapshot
 
-The full baseline was verified locally on 2026-06-20 before the latest quality/API gap closure:
+For newer evidence (2026-10-22, Draft PR #24), see
+[bounded real-source validation](real_data_smoke_2026-10-22.md) and
+[security review](security_review_2026-10-22.md),
+[publication protocol](validation_publication.md), and
+[synthetic benchmark](synthetic_benchmark_2026-10-22.md). The most recent local
+correctness tests on the Draft PR branch include concurrent pinned-reader
+stress tests, revision storage inventory and corrupted-restore rejection;
+the full Python test count and CI head SHA are recorded in the latest PR checks.
+The preceding test pass covered **97 Python tests**, Ruff lint
+and format, repository readiness/guardrails, and **9 Playwright browser tests**
+(1 skip). The 10 GitHub CI jobs previously passed on commit `cd529f58`;
+check current PR-head CI status independently before merging.
+Restore on the publication layer does not automatically revert DuckDB or dbt marts; see
+[post-restore warehouse reconciliation](validation_publication.md#read-only-inspection-and-guarded-restore)
+before claiming full-dashboard recovery. The following June snapshot is historical.
+
+The full baseline was verified locally on 2026-06-20 before the latest quality/API gap closure.
+This section records historical pre-deduplication measurements; the current
+fixture now has three physical rows, two validated staging rows, one curated fact trip,
+one rejected row, and $23.50 in curated revenue:
+
 
 - 62 Python tests passed; Ruff lint and format checks passed.
 - The offline demo completed twice with 2 validated staging/fact rows, proving month-level

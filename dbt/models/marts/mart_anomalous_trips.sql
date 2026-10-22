@@ -3,8 +3,8 @@ select
     service,
     pickup_datetime,
     dropoff_datetime,
-    pickup_date,
-    pickup_hour,
+    cast(pickup_datetime as date) as pickup_date,
+    extract(hour from pickup_datetime)::integer as pickup_hour,
     pickup_zone_id,
     dropoff_zone_id,
     passenger_count,
@@ -23,7 +23,9 @@ select
     quality_reasons,
     source_file,
     ingested_at
-from {{ ref("fct_trips") }}
+-- Use staging so duplicate warnings remain visible in the Anomaly Explorer
+-- even though curated facts exclude them from aggregate metrics.
+from {{ ref("stg_yellow_trips") }}
 where
     quality_status = 'warning'
     or trip_distance = 0

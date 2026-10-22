@@ -53,6 +53,11 @@ def test_dbt_run_and_test_on_generated_fixture(
         ),
         source,
     )
+    # Two identical physical records must produce one business trip while
+    # preserving the duplicate warning in the anomaly mart.
+    original_rows = pq.read_table(source)
+    pq.write_table(pa.concat_tables([original_rows, original_rows]), source)
+
     zones = zone_lookup_path(data_dir)
     zones.parent.mkdir(parents=True, exist_ok=True)
     zones.write_text(
@@ -109,10 +114,20 @@ def test_dbt_run_and_test_on_generated_fixture(
             "select trip_id, is_airport_trip, quality_status from fct_trips"
         ).fetchone()
         daily_count = connection.execute("select count(*) from mart_daily_trip_metrics").fetchone()
+        staging_count = connection.execute("select count(*) from staging.yellow_trips").fetchone()
+        anomaly_count = connection.execute(
+            "select count(*) from mart_anomalous_trips where quality_reasons = 'duplicate_record'"
+        ).fetchone()
+        total_revenue = connection.execute(
+            "select sum(total_revenue) from mart_daily_trip_metrics"
+        ).fetchone()
 
     assert fact is not None
     assert fact[1:] == (True, "valid")
     assert daily_count == (1,)
+    assert staging_count == (2,)
+    assert anomaly_count == (1,)
+    assert total_revenue == (23.5,)
 
     monkeypatch.setenv("DUCKDB_PATH", str(database))
     with TestClient(app) as client:

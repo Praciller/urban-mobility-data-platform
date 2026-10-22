@@ -12,7 +12,8 @@ to implement deployment, authentication, paid services, or new dataset services 
 ## Data Quality
 
 - Add out-of-month pickup/dropoff validation if analysts need strict monthly partitions.
-- Add duplicate severity categories beyond the current warning behavior.
+- Add duplicate severity categories beyond the current warning behavior (curated KPI deduplication
+  and anomaly evidence are implemented).
 - Add richer rejected-row summaries by rule, zone, and source file.
 - Add schema drift detection for future TLC column changes.
 

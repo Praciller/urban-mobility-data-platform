@@ -34,7 +34,7 @@ sources.
 ## Reruns
 
 - Fixture creation overwrites the tiny demo fixture for the selected service/year/month.
-- Validation overwrites the selected validated/rejected partition outputs.
+- Validation writes a new immutable version and atomically updates a per-partition pointer; previous revisions remain for readers and recovery. See [publication protocol](validation_publication.md).
 - DuckDB loading deletes and reloads only the selected service/year/month in staging.
 - dbt rebuilds marts from the current DuckDB staging state.
 - Dagster materialization is idempotent for the same local files and month.
