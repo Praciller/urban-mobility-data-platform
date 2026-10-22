@@ -7,7 +7,9 @@ PowerShell-friendly and assume the repository root as the starting directory.
 
 For newer evidence (2026-10-22, Draft PR #24), see
 [bounded real-source validation](real_data_smoke_2026-10-22.md) and
-[security review](security_review_2026-10-22.md). The current branch was
+[security review](security_review_2026-10-22.md),
+[publication protocol](validation_publication.md), and
+[synthetic benchmark](synthetic_benchmark_2026-10-22.md). The earlier branch was
 locally verified with 84 Python tests, 13 frontend unit tests, 12 Storybook
 tests, and 9 passing Playwright cases (1 skip); all 10 GitHub CI jobs
 passed. The following June snapshot is historical.

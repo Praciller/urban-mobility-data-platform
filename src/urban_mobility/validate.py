@@ -4,7 +4,6 @@ import argparse
 import csv
 import json
 import shutil
-import tempfile
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -16,6 +15,11 @@ import pyarrow.parquet as pq
 from urban_mobility.config import get_data_dir
 from urban_mobility.download import validate_trip_request, zone_lookup_path
 from urban_mobility.ingest import resolve_trip_path
+from urban_mobility.validation_store import (
+    activate_version,
+    allocate_version,
+    current_version,
+)
 
 MAX_TRIP_DURATION_MINUTES = 24 * 60
 MAX_REASONABLE_SPEED_MPH = 100
@@ -45,11 +49,17 @@ class ValidationResult:
     summary: dict[str, Any]
 
 
-def validation_summary_path(data_dir: Path, year: int, month: int) -> Path:
+def validation_summary_path(data_dir: Path, year: int, month: int, service: str = "yellow") -> Path:
+    active = current_version(data_dir, year, month, service)
+    if active is not None:
+        return active / "summary.json"
     return data_dir / "reports" / "data_quality" / f"validation_{year}_{month:02d}.json"
 
 
 def validated_trip_path(data_dir: Path, year: int, month: int, service: str) -> Path:
+    active = current_version(data_dir, year, month, service)
+    if active is not None:
+        return active / "validated.parquet"
     return (
         data_dir
         / "processed"
@@ -62,6 +72,9 @@ def validated_trip_path(data_dir: Path, year: int, month: int, service: str) -> 
 
 
 def rejected_trip_path(data_dir: Path, year: int, month: int, service: str) -> Path:
+    active = current_version(data_dir, year, month, service)
+    if active is not None:
+        return active / "rejected.parquet"
     return (
         data_dir
         / "processed"
@@ -95,22 +108,15 @@ def validate_trip_data(
     columns = pq.read_schema(source).names
     zone_ids = _load_zone_ids(zones)
 
-    validated = validated_trip_path(resolved_data_dir, year, month, service)
-    rejected = rejected_trip_path(resolved_data_dir, year, month, service)
-    summary_path = validation_summary_path(resolved_data_dir, year, month)
-    for output in (validated, rejected, summary_path):
-        output.parent.mkdir(parents=True, exist_ok=True)
-
-    # Stage every artifact before touching the last successful partition. If a
-    # DuckDB query or Parquet write fails, the previous run remains usable.
-    staging_parent = resolved_data_dir / "processed"
-    staging_parent.mkdir(parents=True, exist_ok=True)
+    # Each run is immutable. Only the single atomic manifest pointer decides
+    # which three artifacts are visible to readers; an interrupted run cannot
+    # publish a partially written snapshot.
+    version = allocate_version(resolved_data_dir, year, month, service)
+    validated = version / "validated.parquet"
+    rejected = version / "rejected.parquet"
+    summary_path = version / "summary.json"
     ingested_at = datetime.now(UTC).replace(tzinfo=None, microsecond=0)
-    with tempfile.TemporaryDirectory(prefix=".validation-", dir=staging_parent) as temp:
-        staging_dir = Path(temp)
-        staged_validated = staging_dir / "validated.parquet"
-        staged_rejected = staging_dir / "rejected.parquet"
-        staged_summary = staging_dir / "summary.json"
+    try:
         with duckdb.connect() as connection:
             connection.execute("create temp table valid_zone_ids (location_id integer primary key)")
             connection.executemany(
@@ -127,8 +133,8 @@ def validate_trip_data(
                     ingested_at=ingested_at,
                 )
             )
-            _copy_classification(connection, staged_validated, "quality_status <> 'rejected'")
-            _copy_classification(connection, staged_rejected, "quality_status = 'rejected'")
+            _copy_classification(connection, validated, "quality_status <> 'rejected'")
+            _copy_classification(connection, rejected, "quality_status = 'rejected'")
             summary = _build_summary(
                 connection=connection,
                 source=source,
@@ -139,15 +145,15 @@ def validate_trip_data(
                 service=service,
                 validated_at=ingested_at,
             )
-        _write_json(staged_summary, summary)
-        _publish_artifacts(
-            staging_dir,
-            (
-                (staged_validated, validated),
-                (staged_rejected, rejected),
-                (staged_summary, summary_path),
-            ),
-        )
+        _write_json(summary_path, summary)
+        activate_version(resolved_data_dir, year, month, service, version)
+    except Exception:
+        # Before the pointer update, this run is invisible and can be cleaned.
+        # Never delete a run that is already current, even if a post-commit
+        # cleanup operation or another exception fails.
+        if current_version(resolved_data_dir, year, month, service) != version:
+            shutil.rmtree(version)
+        raise
     return ValidationResult(
         summary_path=summary_path,
         validated_path=validated,
@@ -511,38 +517,6 @@ def _build_summary(
             "rejected": str(rejected),
         },
     }
-
-
-def _publish_artifacts(
-    staging_dir: Path,
-    artifacts: tuple[tuple[Path, Path], ...],
-) -> None:
-    """Replace a validated partition, restoring the previous outputs on errors.
-
-    Staging and backups live on the same filesystem as the published artifacts.
-    This is failure-rollback protection, not an atomic multi-file transaction
-    against abrupt power loss; readers should not run during publication.
-    """
-    backups: dict[Path, Path] = {}
-    for index, (_, destination) in enumerate(artifacts):
-        if destination.exists():
-            backup = staging_dir / f"backup-{index}{destination.suffix}"
-            shutil.copy2(destination, backup)
-            backups[destination] = backup
-
-    published: list[Path] = []
-    try:
-        for staged, destination in artifacts:
-            staged.replace(destination)
-            published.append(destination)
-    except OSError:
-        for destination in reversed(published):
-            backup = backups.get(destination)
-            if backup is None:
-                destination.unlink(missing_ok=True)
-            else:
-                backup.replace(destination)
-        raise
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:

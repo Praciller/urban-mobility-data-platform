@@ -207,12 +207,10 @@ def test_validation_writes_classified_outputs_and_summary(tmp_path: Path) -> Non
 
     assert result.summary["status_counts"] == {"valid": 1, "warning": 1, "rejected": 1}
     assert result.summary["rule_counts"]["duplicate_record"] == 1
-    assert result.validated_path.parent == (
-        tmp_path / "processed" / "validated" / "service=yellow" / "year=2026" / "month=01"
-    )
-    assert result.rejected_path.parent == (
-        tmp_path / "processed" / "rejected" / "service=yellow" / "year=2026" / "month=01"
-    )
+    assert result.validated_path.parent == result.rejected_path.parent
+    assert result.validated_path.name == "validated.parquet"
+    assert result.rejected_path.name == "rejected.parquet"
+    assert "publications" in result.validated_path.parts
 
     validated = pq.read_table(result.validated_path)
     assert validated.num_rows == 2

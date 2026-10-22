@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from apps.api.app.core.errors import DataUnavailableError, ResourceNotFoundError
+from urban_mobility.validation_store import PublicationError, current_version
 
 MAX_VALIDATION_SUMMARY_BYTES = 1_000_000
 STATUS_NAMES = ("valid", "warning", "rejected")
@@ -13,19 +14,37 @@ STATUS_NAMES = ("valid", "warning", "rejected")
 
 class QualityReportRepository:
     def __init__(self, data_dir: Path) -> None:
-        self.reports_dir = data_dir.expanduser().resolve() / "reports" / "data_quality"
+        self.data_dir = data_dir.expanduser().resolve()
+        self.reports_dir = self.data_dir / "reports" / "data_quality"
 
     def latest_summary(self) -> dict[str, Any]:
-        candidates = sorted(
-            self.reports_dir.glob("validation_[0-9][0-9][0-9][0-9]_[0-9][0-9].json")
-        )
+        # Legacy flat reports remain readable; current snapshots are resolved
+        # exclusively through atomic pointers to immutable version directories.
+        candidates = [
+            (path, path.name)
+            for path in sorted(
+                self.reports_dir.glob("validation_[0-9][0-9][0-9][0-9]_[0-9][0-9].json")
+            )
+        ]
+        pointers = self.data_dir / "processed" / "publications"
+        for pointer in pointers.glob("service=*/year=*/month=*/current.json"):
+            try:
+                service = pointer.parents[2].name.removeprefix("service=")
+                year = int(pointer.parents[1].name.removeprefix("year="))
+                month = int(pointer.parent.name.removeprefix("month="))
+                version = current_version(self.data_dir, year, month, service)
+                if version is None:
+                    raise PublicationError("Active snapshot disappeared")
+            except (ValueError, PublicationError) as error:
+                raise DataUnavailableError("An active validation publication is invalid") from error
+            candidates.append((version / "summary.json", f"validation_{year}_{month:02d}.json"))
         if not candidates:
             raise ResourceNotFoundError("No validation summary is available")
 
-        # Backfills may finish after a newer source month. File-name order is
-        # therefore not a reliable indicator of the most recently completed run.
+        # Backfills may finish after newer months: choose the latest completed
+        # validated_at, never a lexicographic filename.
         latest: tuple[datetime, dict[str, Any]] | None = None
-        for path in candidates:
+        for path, artifact_name in candidates:
             try:
                 if path.stat().st_size > MAX_VALIDATION_SUMMARY_BYTES:
                     raise DataUnavailableError("A validation summary exceeds the size limit")
@@ -35,7 +54,7 @@ class QualityReportRepository:
             except (OSError, json.JSONDecodeError) as error:
                 raise DataUnavailableError("A validation summary is unreadable") from error
 
-            normalized = _normalize_summary(payload, path.name)
+            normalized = _normalize_summary(payload, artifact_name)
             try:
                 timestamp = datetime.fromisoformat(
                     normalized["validated_at"].replace("Z", "+00:00")
