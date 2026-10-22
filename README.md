@@ -44,6 +44,14 @@ development and the full-data `DATA_DIR` workflow remain the source of truth for
   `C:/data/urban-mobility-data-platform`.
 - The default demo uses a tiny generated local fixture and does not download official NYC TLC data.
 
+## Verification evidence (Draft PR #24)
+
+The October 2026 correctness/security hardening and local two-month NYC TLC smoke tests
+are documented in [real-source validation](docs/real_data_smoke_2026-10-22.md)
+and [security review](docs/security_review_2026-10-22.md). The former uses two
+bounded 1,000-row sequential samples and is **not** a full-volume load benchmark.
+These documents describe changes proposed in the draft PR, not the currently hosted build.
+
 ## Architecture
 
 ```mermaid

@@ -5,6 +5,13 @@ PowerShell-friendly and assume the repository root as the starting directory.
 
 ## Verification Snapshot
 
+For newer evidence (2026-10-22, Draft PR #24), see
+[bounded real-source validation](real_data_smoke_2026-10-22.md) and
+[security review](security_review_2026-10-22.md). The current branch was
+locally verified with 84 Python tests, 13 frontend unit tests, 12 Storybook
+tests, and 9 passing Playwright cases (1 skip); all 10 GitHub CI jobs
+passed. The following June snapshot is historical.
+
 The full baseline was verified locally on 2026-06-20 before the latest quality/API gap closure.
 This section records historical pre-deduplication measurements; the current
 fixture now has three physical rows, two validated staging rows, one curated fact trip,
