@@ -61,7 +61,7 @@ uv run dbt run --project-dir dbt --profiles-dir dbt
 uv run dbt test --project-dir dbt --profiles-dir dbt
 ```
 
-Before treating recovery as finished, verify loaded staging counts, dbt tests and API/Quality results against the restored summary. If the database uses a different storage location, use the actual configured path instead. These commands are **not** executed automatically by Restore, and this workflow is not a transactional rollback spanning Parquet, DuckDB and dbt. Do not run `scripts/run_demo.py` as a recovery shortcut, because it can regenerate demo fixtures.
+Before treating recovery as finished, verify loaded staging counts, dbt tests and API/Quality results against the restored summary. For a deterministic local-only drill that proves the stale-reader interval and post-reconciliation consistency, see [Reliability verification (2026-10-28)](reliability_verification_2026-10-28.md) and run `uv run pytest tests/integration/test_recovery_drill.py -v`. If the database uses a different storage location, use the actual configured path instead. These commands are **not** executed automatically by Restore, and this workflow is not a transactional rollback spanning Parquet, DuckDB and dbt. Do not run `scripts/run_demo.py` as a recovery shortcut, because it can regenerate demo fixtures.
 
 ## Test evidence
 
