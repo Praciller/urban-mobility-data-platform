@@ -31,7 +31,8 @@ def test_local_sql_profile_produces_explain_baselines_without_artifacts() -> Non
     )
     assert result.returncode == 0, result.stdout + result.stderr
     report = json.loads(result.stdout)
-    assert report["rows"] == report["staging_rows"] == report["facts_rows"] == 30
+    assert report["rows"] == report["facts_rows"] == 30
+    assert report["staging_rows"] == 31  # extra duplicate anomaly, not a business trip
     assert set(report["queries"]) == {
         "filtered_overview",
         "daily_mart_page",

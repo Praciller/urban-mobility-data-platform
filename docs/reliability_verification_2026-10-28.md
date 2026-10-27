@@ -52,20 +52,29 @@ uv run python scripts/benchmark_sql.py --rows 3000 --repetitions 3 --summary-onl
 uv run pytest tests/integration/test_sql_profile.py -v
 ```
 
-Measured Windows 11 / Python 3.12.14 / DuckDB 1.5.3 with 3,000 curated synthetic records; three warmed executions per query. Times are **milliseconds**, local observations only:
+Measured Windows 11 / Python 3.12.14 / DuckDB 1.5.3 with **3,001 source/staging rows** (3,000 distinct trips plus one duplicate warning) and **3,000 curated fact rows**; three warmed executions per query. The deliberate duplicate keeps the anomaly mart nonempty, avoiding an unrealistic `EMPTY_RESULT` query plan. Times are **milliseconds**, local observations only:
 
 | Query | Rows targeted | Median ms | EXPLAIN plan SHA-256 prefix |
 | --- | ---: | ---: | --- |
-| Filtered fact overview | 3,000 | 0.660 | `b63134bc0495` |
-| Date-filtered daily mart | 3,000 input | 0.658 | `7dac404c207c` |
-| Date-filtered hourly mart | 3,000 input | 0.849 | `2b13e42a4ee5` |
-| Route / two zone joins | 3,000 input | 1.702 | `841255c9b1c` |
-| Date-filtered anomaly page | 3,000 input | 0.698 | `d41fdc53cee` |
+| Filtered fact overview | 3,000 | 0.720 | `b63134bc0495` |
+| Date-filtered daily mart | 3,000 input | 0.631 | `7dac404c207c` |
+| Date-filtered hourly mart | 3,000 input | 0.573 | `2b13e42a4ee5` |
+| Route / two zone joins | 3,000 input | 1.409 | `841255c9b1c` |
+| Date-filtered anomaly page | 3,001 input | 0.525 | `3fe8316847af` |
 
-Existing queries already filter date where applicable, aggregate from prepared marts, and use bounded pagination. Route/zone joins are the most expensive of the measured five, but their absolute timing on this tiny dataset does **not** demonstrate a scalable bottleneck. **No SQL changes were made**, so before/after optimization is not applicable. Do not mistake the five plan fingerprints for universal stable plan snapshots; version or optimizer changes may alter them. The CI structural test checks that each query executes and yields a plan, not fragile millisecond/plan-hash thresholds. To compare later, keep row count, warmup, repetitions, DuckDB/dbt versions and hardware fixed and test a representative larger dataset.
+Actual `EXPLAIN` plans were inspected: the fact overview uses a sequential scan plus ungrouped aggregation; date-limited daily/hourly/anomaly mart reads use sequential scans and bounded `TOP_N`; route metrics join taxi zones with two hash joins and a bounded `TOP_N`. There is no partitioned DuckDB storage to prune; the small local tables make sequential scanning unsurprising. Existing queries already filter date where applicable, aggregate from prepared marts, and use bounded pagination. Route/zone joins are the most expensive of the measured five, but their absolute timing on this tiny dataset does **not** demonstrate a scalable bottleneck. **No SQL changes were made**, so before/after optimization is not applicable. Do not mistake the five plan fingerprints for universal stable plan snapshots; version or optimizer changes may alter them. The CI structural test checks that each query executes and yields a plan, not fragile millisecond/plan-hash thresholds. To compare later, keep row count, warmup, repetitions, DuckDB/dbt versions and hardware fixed and test a representative larger dataset.
 
 ## Verification and cleanup
 
-The initial targeted recovery drill passed (1/1); initial DST cases passed (10/10). All added tests (recovery, extended DST through dbt/API, SQL structural profile) are intended to run in the normal `uv run pytest` CI gate. Existing repository guardrails/readiness and Ruff must remain passing, as must the React checks/Playwright jobs. The GitHub PR check results are the authoritative CI evidence. Tests do not delete active publication revisions or backups.
+Local verification on Windows 11, Python 3.12.14, DuckDB 1.5.3, and Node 24-equivalent frontend tooling:
 
-Only temporary resources created for this audit may be removed; do **not** run broad data-cleanup commands or touch an external `DATA_DIR`/`DUCKDB_PATH`. A complete success claim requires verifying the new PR's exact-head CI checks and confirming no temporary process/workspace remains.
+- `uv run pytest -q`: **114 passed** (includes 13 newly added recovery / DST / SQL tests). One existing Starlette/httpx deprecation warning; not introduced by these tests.
+- `uv run ruff check .`, `uv run ruff format --check .`, repository guardrails and readiness: **passed**.
+- React Prettier, ESLint, TypeScript typecheck, Vitest (13 passed), and Vite build: **passed**.
+- Isolated browser E2E sample fixture: **9 passed, 1 skipped** across desktop and mobile Chromium; pipeline dbt tests: **42 passed**.
+- `docker compose config --quiet`: **passed**. `npm audit --prefix apps/web --audit-level=high`: **0 vulnerabilities**.
+- SQL synthetic baseline of 3,000 rows / 5 statements / 3 repetitions: completed successfully with full EXPLAIN and EXPLAIN ANALYZE plans; no SQL optimization was justified on this workload.
+
+The GitHub PR check results remain the authoritative hosted CI evidence. Tests do not delete active publication revisions or backups.
+
+Only temporary resources created for this audit may be removed; do **not** run broad data-cleanup commands or touch an external `DATA_DIR`/`DUCKDB_PATH`. Verify the PR's exact-head CI checks and confirm that no temporary test process/workspace remains before closeout.

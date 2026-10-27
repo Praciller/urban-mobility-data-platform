@@ -19,6 +19,8 @@ import time
 from pathlib import Path
 
 import duckdb
+import pyarrow as pa
+import pyarrow.parquet as pq
 from benchmark_pipeline import MAX_ROWS, _write_synthetic_inputs
 
 from urban_mobility.load_duckdb import load_validated_to_duckdb
@@ -96,6 +98,9 @@ def benchmark_sql(rows: int = 3000, repetitions: int = 3) -> dict:
         scratch = Path(workspace)
         database = scratch / "processed" / "profile.duckdb"
         source = _write_synthetic_inputs(scratch, rows)
+        # Exercise the anomaly mart while preserving the number of curated trips.
+        original = pq.read_table(source)
+        pq.write_table(pa.concat_tables([original, original.slice(0, 1)]), source)
         validation = validate_trip_data(
             year=2026, month=1, service="yellow", data_dir=scratch, input_path=source
         )
@@ -107,7 +112,11 @@ def benchmark_sql(rows: int = 3000, repetitions: int = 3) -> dict:
             duckdb_path=database,
             validated_path=validation.validated_path,
         )
-        if loaded.loaded_rows != rows or validation.summary["status_counts"]["rejected"]:
+        if (
+            loaded.loaded_rows != rows + 1
+            or validation.summary["status_counts"]["warning"] != 1
+            or validation.summary["status_counts"]["rejected"] != 0
+        ):
             raise AssertionError("Unexpected synthetic staging counts")
 
         environment = os.environ.copy()
@@ -139,6 +148,11 @@ def benchmark_sql(rows: int = 3000, repetitions: int = 3) -> dict:
             fact_rows = connection.execute("select count(*) from fct_trips").fetchone()[0]
             if fact_rows != rows:
                 raise AssertionError(f"Expected {rows} curated trips; got {fact_rows}")
+            anomaly_rows = connection.execute(
+                "select count(*) from mart_anomalous_trips"
+            ).fetchone()[0]
+            if anomaly_rows < 1:
+                raise AssertionError("Synthetic duplicate did not reach anomaly mart")
             results = profile_queries(connection, repetitions)
         # All measurements and plans were recorded before TemporaryDirectory cleanup.
         return {
