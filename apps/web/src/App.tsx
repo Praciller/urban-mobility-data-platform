@@ -1,6 +1,11 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
-import { dailyMetricsCsvUrl, fetchDashboardData, fetchZoneSummary } from "./api/client";
+import {
+  dailyMetricsCsvUrl,
+  fetchDashboardData,
+  fetchZoneSummary,
+  getApiBaseUrl,
+} from "./api/client";
 import type { DashboardData } from "./api/types";
 import { AppShell } from "./components/AppShell";
 import { ErrorState, LoadingState } from "./components/StateBlocks";
@@ -43,6 +48,7 @@ export function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [reloadToken, setReloadToken] = useState(0);
 
+  const hosted = new URL(getApiBaseUrl()).hostname.endsWith(".onrender.com");
   const exportUrl = useMemo(() => dailyMetricsCsvUrl(filters), [filters]);
 
   useEffect(() => {
@@ -79,7 +85,7 @@ export function App() {
 
   function renderPage() {
     if (!data) {
-      return <LoadingState />;
+      return <LoadingState hosted={hosted} />;
     }
 
     switch (activePage) {
@@ -114,11 +120,15 @@ export function App() {
       onReload={() => setReloadToken((current) => current + 1)}
     >
       {error ? (
-        <ErrorState message={error} onRetry={() => setReloadToken((current) => current + 1)} />
+        <ErrorState
+          hosted={hosted}
+          message={error}
+          onRetry={() => setReloadToken((current) => current + 1)}
+        />
       ) : isLoading && !data ? (
-        <LoadingState />
+        <LoadingState hosted={hosted} />
       ) : (
-        <Suspense fallback={<LoadingState />}>{renderPage()}</Suspense>
+        <Suspense fallback={<LoadingState hosted={hosted} />}>{renderPage()}</Suspense>
       )}
     </AppShell>
   );

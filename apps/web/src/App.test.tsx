@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
@@ -12,6 +12,7 @@ describe("Urban mobility dashboard", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   test("renders overview KPIs with mocked analytics data", async () => {
@@ -61,6 +62,33 @@ describe("Urban mobility dashboard", () => {
 
     expect(await screen.findByRole("heading", { name: "API unavailable" })).toBeInTheDocument();
     expect(screen.getByText(/Start the local FastAPI service/i)).toBeInTheDocument();
+  });
+
+  test("explains hosted API startup and recovers when Retry succeeds", async () => {
+    vi.stubEnv("VITE_API_BASE_URL", "https://praciller-urban-mobility-api.onrender.com");
+    const fetchMock = createFetchMock();
+    let available = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (available) return fetchMock(input);
+        return Response.json({ detail: "Service unavailable" }, { status: 503 });
+      }),
+    );
+    render(<App />);
+
+    expect(within(screen.getByRole("main")).getByRole("status")).toHaveTextContent(
+      "may take a moment to start",
+    );
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("may still be starting");
+    expect(alert).not.toHaveTextContent("uvicorn");
+
+    available = true;
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+
+    expect(await screen.findByRole("heading", { name: "Overview" })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   test("renders empty state for charts when an endpoint returns no rows", async () => {
