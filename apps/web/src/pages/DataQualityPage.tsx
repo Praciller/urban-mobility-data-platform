@@ -1,7 +1,7 @@
 import { DataTable } from "../components/DataTable";
 import { StatCard } from "../components/StatCard";
 import type { DashboardData } from "../api/types";
-import { formatDate, formatDateTime, formatNumber, formatServices } from "../lib/format";
+import { formatDate, formatNumber, formatServices, formatUtcDateTime } from "../lib/format";
 import { EmptyState } from "../components/StateBlocks";
 
 interface DataQualityPageProps {
@@ -39,7 +39,7 @@ export function DataQualityPage({ data, exportUrl }: DataQualityPageProps) {
         />
         <StatCard
           label="Data freshness"
-          value={formatDateTime(data.health.data_freshness)}
+          value={formatUtcDateTime(data.health.data_freshness)}
           valueSize="compact"
         />
         <StatCard
@@ -110,7 +110,7 @@ export function DataQualityPage({ data, exportUrl }: DataQualityPageProps) {
               </div>
               <div>
                 <span>Validated</span>
-                <strong>{formatDateTime(data.quality.validated_at)}</strong>
+                <strong>{formatUtcDateTime(data.quality.validated_at)}</strong>
               </div>
               <div>
                 <span>Total rows</span>

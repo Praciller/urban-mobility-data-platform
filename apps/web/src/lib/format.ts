@@ -55,6 +55,23 @@ export function formatDateTime(value: string | null | undefined): string {
   });
 }
 
+export function formatUtcDateTime(value: string | null | undefined): string {
+  if (!value) return "n/a";
+  // Legacy API health responses omit the zone, but ingested_at is UTC by contract.
+  const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(value);
+  const date = new Date(hasTimezone ? value : `${value}Z`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "UTC",
+    timeZoneName: "short",
+  });
+}
+
 export function formatPaymentType(value: number): string {
   const labels: Record<number, string> = {
     1: "Credit card",

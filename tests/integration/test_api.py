@@ -182,7 +182,7 @@ def test_health_reports_database_and_freshness(api_client: TestClient) -> None:
     assert payload["status"] == "ok"
     assert payload["duckdb_available"] is True
     assert "duckdb_path" not in payload
-    assert payload["data_freshness"] == "2026-01-03T10:00:00"
+    assert payload["data_freshness"] == "2026-01-03T10:00:00Z"
     assert "mart_daily_trip_metrics" in payload["available_marts"]
     assert payload["missing_marts"] == []
 

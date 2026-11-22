@@ -39,6 +39,7 @@ test.describe("sample-backed mobility dashboard", () => {
     const browserErrors = captureBrowserErrors(page);
     await page.goto("/");
     await expect(page.getByText("DuckDB connected")).toBeVisible();
+    await expect(page.getByText(/Freshness .+ UTC/)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
     await expect(page.getByText("$23.50")).toBeVisible();
     expect(browserErrors).toEqual([]);

@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 
 import { dashboardPages, limitOptions } from "../lib/filters";
 import type { DashboardFilters, DashboardPageId } from "../lib/filters";
-import { formatDateTime } from "../lib/format";
+import { formatUtcDateTime } from "../lib/format";
 import type { HealthResponse, MetadataResponse } from "../api/types";
 
 interface AppShellProps {
@@ -95,7 +95,7 @@ export function AppShell({
             </span>
             <small>
               {health?.data_freshness
-                ? `Freshness ${formatDateTime(health.data_freshness)}`
+                ? `Freshness ${formatUtcDateTime(health.data_freshness)}`
                 : "Local sample mode"}
             </small>
           </div>
