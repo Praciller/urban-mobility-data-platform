@@ -18,7 +18,7 @@ import type {
 const health: HealthResponse = {
   status: "ok",
   duckdb_available: true,
-  data_freshness: "2026-01-03T10:00:00",
+  data_freshness: "2026-01-03T10:00:00Z",
   available_marts: ["mart_daily_trip_metrics", "mart_route_metrics"],
   missing_marts: [],
 };

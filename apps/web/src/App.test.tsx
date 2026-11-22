@@ -194,6 +194,8 @@ describe("Urban mobility dashboard", () => {
     expect(screen.getByText("Rejected rows")).toBeInTheDocument();
     expect(screen.getByText("negative_fare_amount")).toBeInTheDocument();
     expect(screen.getByText("validation_2026_01.json")).toBeInTheDocument();
+    expect(screen.getByText("Freshness Jan 03, 2026, 10:00 AM UTC")).toBeInTheDocument();
+    expect(screen.getAllByText("Jan 03, 2026, 10:00 AM UTC")).toHaveLength(2);
   });
 
   test("surfaces an invalid quality artifact without hiding healthy analytics", async () => {

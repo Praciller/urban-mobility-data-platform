@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -55,6 +55,14 @@ class AnalyticsRepository:
                     freshness = connection.execute(
                         "select max(ingested_at) from fct_trips"
                     ).fetchone()[0]
+                    if freshness is not None:
+                        # Ingestion stores UTC wall time as a naive DuckDB TIMESTAMP.
+                        # Restore UTC at the API boundary so clients do not infer local time.
+                        freshness = (
+                            freshness.replace(tzinfo=UTC)
+                            if freshness.tzinfo is None
+                            else freshness.astimezone(UTC)
+                        )
                 return HealthSnapshot(True, relations, freshness)
         except DataUnavailableError:
             return HealthSnapshot(False, frozenset(), None)

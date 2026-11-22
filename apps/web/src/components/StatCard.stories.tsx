@@ -25,7 +25,7 @@ export const StatusVariants: Story = {
     <div className="stat-grid">
       <StatCard detail="Within expected range" label="Average fare" tone="success" value="$18.40" />
       <StatCard detail="Needs review" label="Warning rows" tone="warning" value="1,204" />
-      <StatCard label="Data freshness" value="Jan 02, 10:30" valueSize="compact" />
+      <StatCard label="Data freshness" value="Jan 02, 10:30 AM UTC" valueSize="compact" />
     </div>
   ),
 };
